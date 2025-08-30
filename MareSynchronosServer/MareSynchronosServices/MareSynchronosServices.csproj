@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>cba14e50-235d-49ac-8dc5-cacc8398307f</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,12 +12,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="appsettings.Development.json" />
+    <None Include="appsettings.Development.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
     <None Include="appsettings.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
@@ -36,6 +39,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\MareAPI\MareSynchronosAPI\MareSynchronos.API.csproj" />
+    <ProjectReference Include="..\..\MareAPI\MareSynchronosAPI\ShoninSync.API.csproj" />
     <ProjectReference Include="..\MareSynchronosShared\MareSynchronosShared.csproj" />
   </ItemGroup>
 

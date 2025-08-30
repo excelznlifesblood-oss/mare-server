@@ -68,7 +68,7 @@ public partial class MareWizardModule : InteractionModuleBase
             _ => "unknown",
         };
 
-        eb.WithTitle("Mare Bot Services Captcha");
+        eb.WithTitle("Shonin Sync Bot Services Captcha");
         eb.WithDescription("You are seeing this embed because you interact with this bot for the first time since the bot has been restarted." + Environment.NewLine + Environment.NewLine
             + "This bot __requires__ embeds for its function. To proceed, please verify you have embeds enabled." + Environment.NewLine
             + $"## To verify you have embeds enabled __press on the **{nthButtonText}** button ({nthButtonEmoji}).__");
@@ -155,15 +155,14 @@ public partial class MareWizardModule : InteractionModuleBase
 #endif
 
         EmbedBuilder eb = new();
-        eb.WithTitle("Welcome to the Mare Synchronos Service Bot for this server");
+        eb.WithTitle("Welcome to the Shonin Sync Service Bot for this server");
         eb.WithDescription("Here is what you can do:" + Environment.NewLine + Environment.NewLine
             + (!hasAccount ? string.Empty : ("- Check your account status press \"ℹ️ User Info\"" + Environment.NewLine))
-            + (hasAccount ? string.Empty : ("- Register a new Mare Account press \"🌒 Register\"" + Environment.NewLine))
+            + (hasAccount ? string.Empty : ("- Register a new Shonin Sync Account press \"🌒 Register\"" + Environment.NewLine))
             + (!hasAccount ? string.Empty : ("- You lost your secret key press \"🏥 Recover\"" + Environment.NewLine))
             + (hasAccount ? string.Empty : ("- If you have changed your Discord account press \"🔗 Relink\"" + Environment.NewLine))
             + (!hasAccount ? string.Empty : ("- Create a secondary UIDs press \"2️⃣ Secondary UID\"" + Environment.NewLine))
             + (!hasAccount ? string.Empty : ("- Set a Vanity UID press \"💅 Vanity IDs\"" + Environment.NewLine))
-            + (!hasAccount ? string.Empty : (!isInAprilFoolsMode ? string.Empty : ("- Check your WorryCoin™ and MareToken© balance and add payment options" + Environment.NewLine)))
             + (!hasAccount ? string.Empty : ("- Delete your primary or secondary accounts with \"⚠️ Delete\""))
             );
         eb.WithColor(Color.Blue);
@@ -179,10 +178,6 @@ public partial class MareWizardModule : InteractionModuleBase
             cb.WithButton("Recover", "wizard-recover", ButtonStyle.Secondary, new Emoji("🏥"));
             cb.WithButton("Secondary UID", "wizard-secondary", ButtonStyle.Secondary, new Emoji("2️⃣"));
             cb.WithButton("Vanity IDs", "wizard-vanity", ButtonStyle.Secondary, new Emoji("💅"));
-            if (isInAprilFoolsMode)
-            {
-                cb.WithButton("WorryCoin™ and MareToken© management", "wizard-fools", ButtonStyle.Primary, new Emoji("💲"));
-            }
             cb.WithButton("Delete", "wizard-delete", ButtonStyle.Danger, new Emoji("⚠️"));
         }
 

@@ -1,5 +1,5 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto.CharaData;
+﻿using ShoninSync.API.Data;
+using ShoninSync.API.Dto.CharaData;
 using MareSynchronosServer.Utils;
 using MareSynchronosShared.Models;
 using MareSynchronosShared.Utils;

@@ -1,6 +1,6 @@
-﻿using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto.Group;
+﻿using ShoninSync.API.Data.Enum;
+using ShoninSync.API.Data.Extensions;
+using ShoninSync.API.Dto.Group;
 using MareSynchronosServer.Utils;
 using MareSynchronosShared.Models;
 using MareSynchronosShared.Utils;

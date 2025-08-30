@@ -1,4 +1,4 @@
-﻿using MareSynchronos.API.Data.Enum;
+﻿using ShoninSync.API.Data.Enum;
 
 namespace MareSynchronosShared.Utils;
 public record ClientMessage(MessageSeverity Severity, string Message, string UID);

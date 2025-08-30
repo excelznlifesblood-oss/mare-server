@@ -7,7 +7,7 @@ using MareSynchronosShared.Models;
 using MareSynchronosShared.Utils;
 using MareSynchronosShared.Services;
 using StackExchange.Redis;
-using MareSynchronos.API.Data.Enum;
+using ShoninSync.API.Data.Enum;
 using MareSynchronosShared.Utils.Configuration;
 
 namespace MareSynchronosServices.Discord;
@@ -196,7 +196,7 @@ public class MareModule : InteractionModuleBase
         if (primaryUser == null)
         {
             eb.WithTitle("No account");
-            eb.WithDescription("No Mare account was found associated to your Discord user");
+            eb.WithDescription("No Shonin Sync account was found associated to your Discord user");
             return eb;
         }
 
@@ -223,7 +223,7 @@ public class MareModule : InteractionModuleBase
             if (userInDb == null)
             {
                 eb.WithTitle("No account");
-                eb.WithDescription("The Discord user has no valid Mare account");
+                eb.WithDescription("The Discord user has no valid Shonin Sync account");
                 return eb;
             }
 

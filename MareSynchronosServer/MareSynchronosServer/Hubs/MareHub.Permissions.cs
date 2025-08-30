@@ -1,8 +1,8 @@
-﻿using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Dto;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.API.Dto.User;
-using MareSynchronos.API.Data.Extensions;
+﻿using ShoninSync.API.Data.Enum;
+using ShoninSync.API.Dto;
+using ShoninSync.API.Dto.Group;
+using ShoninSync.API.Dto.User;
+using ShoninSync.API.Data.Extensions;
 using MareSynchronosServer.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;

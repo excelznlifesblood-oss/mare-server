@@ -1,5 +1,5 @@
-﻿using MareSynchronos.API.Dto;
-using MareSynchronos.API.SignalR;
+﻿using ShoninSync.API.Dto;
+using ShoninSync.API.SignalR;
 using MareSynchronosServer.Hubs;
 using MareSynchronosShared.Data;
 using MareSynchronosShared.Metrics;

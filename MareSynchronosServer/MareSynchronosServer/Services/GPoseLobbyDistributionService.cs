@@ -1,5 +1,5 @@
-﻿using MareSynchronos.API.Dto.CharaData;
-using MareSynchronos.API.SignalR;
+﻿using ShoninSync.API.Dto.CharaData;
+using ShoninSync.API.SignalR;
 using MareSynchronosServer.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using StackExchange.Redis.Extensions.Core.Abstractions;

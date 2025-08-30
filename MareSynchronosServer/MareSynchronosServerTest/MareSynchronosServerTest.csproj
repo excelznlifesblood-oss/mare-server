@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MareSynchronosServer\MareSynchronosServer.csproj" />
+    <ProjectReference Include="..\MareSynchronosServices\MareSynchronosServices.csproj" />
   </ItemGroup>
 
 </Project>

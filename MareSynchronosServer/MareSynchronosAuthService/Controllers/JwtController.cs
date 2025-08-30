@@ -1,4 +1,4 @@
-﻿using MareSynchronos.API.Routes;
+﻿using ShoninSync.API.Routes;
 using MareSynchronosAuthService.Services;
 using MareSynchronosShared;
 using MareSynchronosShared.Data;

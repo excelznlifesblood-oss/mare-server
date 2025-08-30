@@ -1,7 +1,7 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Dto;
-using MareSynchronos.API.SignalR;
+﻿using ShoninSync.API.Data;
+using ShoninSync.API.Data.Enum;
+using ShoninSync.API.Dto;
+using ShoninSync.API.SignalR;
 using MareSynchronosServer.Services;
 using MareSynchronosServer.Utils;
 using MareSynchronosShared;

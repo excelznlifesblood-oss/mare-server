@@ -2,8 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using MareSynchronosServer.Utils;
 using MareSynchronosShared.Utils;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto.Group;
+using ShoninSync.API.Data;
+using ShoninSync.API.Dto.Group;
 using MareSynchronosShared.Metrics;
 using Microsoft.AspNetCore.SignalR;
 

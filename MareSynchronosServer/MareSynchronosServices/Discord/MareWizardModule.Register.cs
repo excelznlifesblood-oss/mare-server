@@ -23,7 +23,7 @@ public partial class MareWizardModule
         EmbedBuilder eb = new();
         eb.WithColor(Color.Blue);
         eb.WithTitle("Start Registration");
-        eb.WithDescription("Here you can start the registration process with the Mare Synchronos server of this Discord." + Environment.NewLine + Environment.NewLine
+        eb.WithDescription("Here you can start the registration process with the Shonin Sync server of this Discord." + Environment.NewLine + Environment.NewLine
             + "- Have your Lodestone URL ready (i.e. https://eu.finalfantasyxiv.com/lodestone/character/XXXXXXXXX)" + Environment.NewLine
             + "  - The registration requires you to modify your Lodestone profile with a generated code for verification" + Environment.NewLine
             + "- Do not use this on mobile because you will need to be able to copy the generated secret key" + Environment.NewLine

@@ -1,9 +1,9 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Dto;
-using MareSynchronos.API.Dto.CharaData;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.API.Dto.User;
+﻿using ShoninSync.API.Data;
+using ShoninSync.API.Data.Enum;
+using ShoninSync.API.Dto;
+using ShoninSync.API.Dto.CharaData;
+using ShoninSync.API.Dto.Group;
+using ShoninSync.API.Dto.User;
 
 namespace MareSynchronosServer.Hubs
 {

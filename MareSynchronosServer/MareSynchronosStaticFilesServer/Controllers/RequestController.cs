@@ -1,4 +1,4 @@
-﻿using MareSynchronos.API.Routes;
+﻿using ShoninSync.API.Routes;
 using MareSynchronosStaticFilesServer.Services;
 using Microsoft.AspNetCore.Mvc;
 

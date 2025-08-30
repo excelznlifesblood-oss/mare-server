@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>15e2cfbb-146a-42c3-9238-2edf453f77b4</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,9 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="appsettings.Development.json" />
+    <None Include="appsettings.Development.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="appsettings.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

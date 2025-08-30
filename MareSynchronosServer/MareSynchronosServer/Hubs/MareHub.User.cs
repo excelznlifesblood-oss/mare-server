@@ -1,10 +1,10 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto.User;
+using ShoninSync.API.Data;
+using ShoninSync.API.Data.Enum;
+using ShoninSync.API.Data.Extensions;
+using ShoninSync.API.Dto.User;
 using MareSynchronosServer.Utils;
 using MareSynchronosShared.Metrics;
 using MareSynchronosShared.Models;
