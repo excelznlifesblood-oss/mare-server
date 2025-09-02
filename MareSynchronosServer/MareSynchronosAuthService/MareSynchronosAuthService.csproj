@@ -14,6 +14,7 @@
     </PackageReference>
     <PackageReference Include="MaxMind.GeoIP2" Version="5.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.0" />
+    <PackageReference Include="ShoninSync.API" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

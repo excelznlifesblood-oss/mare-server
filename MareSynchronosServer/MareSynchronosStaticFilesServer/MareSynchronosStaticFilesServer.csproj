@@ -31,10 +31,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.0" />
+    <PackageReference Include="ShoninSync.API" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MareAPI\MareSynchronosAPI\MareSynchronos.API.csproj" />
     <ProjectReference Include="..\MareSynchronosShared\MareSynchronosShared.csproj" />
   </ItemGroup>
 
