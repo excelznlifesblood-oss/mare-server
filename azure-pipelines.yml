@@ -227,17 +227,29 @@ stages:
         runOptions: inline
         inline: |
           set -euo pipefail
+          # ensure staging + backups roots exist (owned by the deploy user)
           mkdir -p "$(REMOTE_INCOMING)"
+          mkdir -p "/shoninsync/_backups"
           cat > /tmp/deploy_inplace.sh << 'EOS'
           #!/usr/bin/env bash
           set -euo pipefail
           UNIT="$1"; DIR="$2"; TAR="$3"; TS="$(date +%Y%m%d%H%M%S)"
-          BACKUP="$DIR/.backup_$TS.tgz"
+          BACKUP_DIR="/shoninsync/_backups/$UNIT"
+          BACKUP="$BACKUP_DIR/$TS.tgz"
+
           echo "[deploy] unit=$UNIT dir=$DIR tar=$TAR"
           sudo systemctl stop "$UNIT" || true
-          if [ -d "$DIR" ]; then tar -C "$DIR" -czf "$BACKUP" . || true; fi
+
+          # make backup OUTSIDE the target dir to avoid tar warnings
+          mkdir -p "$BACKUP_DIR"
+          if [ -d "$DIR" ]; then
+            tar -C "$DIR" -czf "$BACKUP" . || true
+            echo "[deploy] backup -> $BACKUP"
+          fi
+
           mkdir -p "$DIR"
           tar -C "$DIR" -xzf "$TAR"
+
           sudo systemctl start "$UNIT"
           if ! sudo systemctl is-active --quiet "$UNIT"; then
             echo "[deploy] start failed; rolling back from $BACKUP"
@@ -252,6 +264,7 @@ stages:
           echo "[deploy] $UNIT running"
           EOS
           chmod +x /tmp/deploy_inplace.sh
+
 
     # ---- Discord ----
     - task: CopyFilesOverSSH@0
