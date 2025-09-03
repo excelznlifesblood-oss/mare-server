@@ -1,0 +1,159 @@
+# azure-pipelines.yml — build & deploy Shonin Sync services to your Ubuntu box
+# Queue-time params:
+#   app:    which app(s) to build/deploy
+#   deploy: build-only or build+deploy
+parameters:
+- name: app
+  displayName: Which app(s)?
+  type: string
+  default: all
+  values: [all, discord, server, auth, files]
+- name: deploy
+  displayName: Deploy after build?
+  type: boolean
+  default: true
+
+trigger:
+  branches:
+    include: [ main ]
+  paths:
+    include:
+      - MareSynchronosServer/**
+      - azure-pipelines.yml
+
+pr:
+  branches:
+    include: [ main ]
+
+variables:
+  DOTNET_SDK: '9.0.x'
+  SSH_CONN: 'racknerd'                 # <— your SSH service connection
+  REMOTE_INCOMING: '/shoninsync/_incoming'
+
+  # Project paths (from repo root)
+  DISCORD_PROJECT: 'MareSynchronosServer/MareSynchronosServices/MareSynchronosServices.csproj'
+  SERVER_PROJECT:  'MareSynchronosServer/MareSynchronosServer/MareSynchronosServer.csproj'
+  AUTH_PROJECT:    'MareSynchronosServer/MareSynchronosAuthService/MareSynchronosAuthService.csproj'
+  FILES_PROJECT:   'MareSynchronosServer/MareSynchronosStaticFilesServer/MareSynchronosStaticFilesServer.csproj'
+
+  # Existing server dirs
+  DISCORD_REMOTE_DIR: '/shoninsync/services'
+  SERVER_REMOTE_DIR:  '/shoninsync/server'
+  AUTH_REMOTE_DIR:    '/shoninsync/auth'
+  FILES_REMOTE_DIR:   '/shoninsync/files'
+
+  # Existing systemd units (without .service suffix)
+  DISCORD_UNIT: 'shonin-services'
+  SERVER_UNIT:  'shonin-server'
+  AUTH_UNIT:    'shonin-auth'
+  FILES_UNIT:   'shonin-files'
+
+# ===================== Build =====================
+- stage: Build
+  displayName: Build & package
+  jobs:
+  - job: build_linux
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+      clean: true
+
+    - task: UseDotNet@2
+      displayName: 'Use .NET SDK $(DOTNET_SDK)'
+      inputs:
+        packageType: sdk
+        version: '$(DOTNET_SDK)'
+
+    # ---- Discord bot ----
+    - ${{ if or(eq(parameters.app, 'all'), eq(parameters.app, 'discord')) }}:
+      - task: Bash@3
+        displayName: 'Build discord bot'
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(DISCORD_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/discord/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/discord.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/discord.tar.gz'
+          artifact: 'discord'
+
+    # ---- Main server ----
+    - ${{ if or(eq(parameters.app, 'all'), eq(parameters.app, 'server')) }}:
+      - task: Bash@3
+        displayName: 'Build main server'
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(SERVER_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/server/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/server.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/server.tar.gz'
+          artifact: 'server'
+
+    # ---- Auth server ----
+    - ${{ if or(eq(parameters.app, 'all'), eq(parameters.app, 'auth')) }}:
+      - task: Bash@3
+        displayName: 'Build auth server'
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(AUTH_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/auth/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/auth.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/auth.tar.gz'
+          artifact: 'auth'
+
+    # ---- Files server ----
+    - ${{ if or(eq(parameters.app, 'all'), eq(parameters.app, 'files')) }}:
+      - task: Bash@3
+        displayName: 'Build files server'
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(FILES_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/files/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/files.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/files.tar.gz'
+          artifact: 'files'
+
+# ===================== Deploy =====================
+- stage: Deploy
+  displayName: Deploy to Ubuntu
+  dependsOn: Build
+  condition: and(succeeded(), ${{ parameters.deploy }})
+  jobs:
+  - job: deploy_job
+    displayName: Deploy selected app(s)
