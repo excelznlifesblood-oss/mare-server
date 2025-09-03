@@ -36,7 +36,15 @@ public class Program
                 }
                 else
                 {
-                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                    if (string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Development", StringComparison.Ordinal))
+                    {
+                        config.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
+                    }
+                    else
+                    {
+                        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                    }
+                   
                 }
 
                 config.AddEnvironmentVariables();

@@ -189,7 +189,7 @@ internal class DiscordBot : IHostedService
             + "You can handle all of your Shonin Sync account needs in this server through the easy to use interactive bot prompt. Just follow the instructions!");
         eb.WithThumbnailUrl("https://raw.githubusercontent.com/MareSynchronos/repo/main/MareSynchronos/images/icon.png");
         var cb = new ComponentBuilder();
-        cb.WithButton("Start (There is a delay)", style: ButtonStyle.Primary, customId: "wizard-home:true", emote: Emoji.Parse("➡️"));
+        cb.WithButton("Start", style: ButtonStyle.Primary, customId: "wizard-captcha:true", emote: Emoji.Parse("➡️"));
         if (prevMessage == null)
         {
             var msg = await channel.SendMessageAsync(embed: eb.Build(), components: cb.Build()).ConfigureAwait(false);
