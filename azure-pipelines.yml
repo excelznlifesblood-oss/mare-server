@@ -106,11 +106,12 @@ stages:
           proj='$(DISCORD_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/discord/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/discord.tar.gz" .
+
     - task: PublishPipelineArtifact@1
       displayName: "Publish artifact: discord"
       condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','discord')))
@@ -129,11 +130,12 @@ stages:
           proj='$(SERVER_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/server/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/server.tar.gz" .
+
     - task: PublishPipelineArtifact@1
       displayName: "Publish artifact: server"
       condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','server')))
@@ -152,11 +154,12 @@ stages:
           proj='$(AUTH_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/auth/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/auth.tar.gz" .
+
     - task: PublishPipelineArtifact@1
       displayName: "Publish artifact: auth"
       condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','auth')))
@@ -175,7 +178,7 @@ stages:
           proj='$(FILES_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/files/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
