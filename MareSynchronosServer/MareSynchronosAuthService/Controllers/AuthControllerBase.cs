@@ -134,13 +134,6 @@ public abstract class AuthControllerBase : Controller
 
         if (lodestone != null)
         {
-            if (!dbContext.BannedRegistrations.Any(c => c.DiscordIdOrLodestoneAuth == lodestone.HashedLodestoneId))
-            {
-                dbContext.BannedRegistrations.Add(new BannedRegistrations()
-                {
-                    DiscordIdOrLodestoneAuth = lodestone.HashedLodestoneId,
-                });
-            }
             if (!dbContext.BannedRegistrations.Any(c => c.DiscordIdOrLodestoneAuth == lodestone.DiscordId.ToString()))
             {
                 dbContext.BannedRegistrations.Add(new BannedRegistrations()

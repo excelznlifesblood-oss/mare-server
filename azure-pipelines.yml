@@ -1,0 +1,328 @@
+# azure-pipelines.yml — build & deploy Shonin Sync services to your Ubuntu box
+
+parameters:
+- name: app
+  displayName: Which app(s)?
+  type: string
+  default: all
+  values:
+  - all
+  - discord
+  - server
+  - auth
+  - files
+
+- name: deploy
+  displayName: Deploy after build?
+  type: boolean
+  default: true
+
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - MareSynchronosServer/**
+    - azure-pipelines.yml
+
+pr:
+  branches:
+    include:
+    - main
+
+variables:
+  DOTNET_SDK: '9.0.x'
+  SSH_CONN: 'racknerd'
+  REMOTE_INCOMING: '/shoninsync/_incoming'
+
+  # Project paths
+  DISCORD_PROJECT: 'MareSynchronosServer/MareSynchronosServices/MareSynchronosServices.csproj'
+  SERVER_PROJECT:  'MareSynchronosServer/MareSynchronosServer/MareSynchronosServer.csproj'
+  AUTH_PROJECT:    'MareSynchronosServer/MareSynchronosAuthService/MareSynchronosAuthService.csproj'
+  FILES_PROJECT:   'MareSynchronosServer/MareSynchronosStaticFilesServer/MareSynchronosStaticFilesServer.csproj'
+
+  # Existing server dirs
+  DISCORD_REMOTE_DIR: '/shoninsync/services'
+  SERVER_REMOTE_DIR:  '/shoninsync/server'
+  AUTH_REMOTE_DIR:    '/shoninsync/auth'
+  FILES_REMOTE_DIR:   '/shoninsync/files'
+
+  # Existing systemd units (without .service suffix)
+  DISCORD_UNIT: 'shonin-services'
+  SERVER_UNIT:  'shonin-server'
+  AUTH_UNIT:    'shonin-auth'
+  FILES_UNIT:   'shonin-files'
+stages:
+  # ===================== Build =====================
+  - stage: Build
+    displayName: Build & package
+    jobs:
+    - job: build_linux
+      displayName: Build on Ubuntu
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+      - checkout: self
+        clean: true
+
+      - task: UseDotNet@2
+        displayName: Use .NET SDK $(DOTNET_SDK)
+        inputs:
+          packageType: sdk
+          version: $(DOTNET_SDK)
+
+      # ---- Discord bot ----
+      - task: Bash@3
+        displayName: Build discord bot
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','discord')))
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(DISCORD_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/discord/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/discord.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish artifact: discord"
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','discord')))
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/discord.tar.gz'
+          artifact: 'discord'
+
+      # ---- Main server ----
+      - task: Bash@3
+        displayName: Build main server
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','server')))
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(SERVER_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/server/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/server.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish artifact: server"
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','server')))
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/server.tar.gz'
+          artifact: 'server'
+
+      # ---- Auth server ----
+      - task: Bash@3
+        displayName: Build auth server
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','auth')))
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(AUTH_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/auth/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/auth.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish artifact: auth"
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','auth')))
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/auth.tar.gz'
+          artifact: 'auth'
+
+      # ---- Files server ----
+      - task: Bash@3
+        displayName: Build files server
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','files')))
+        inputs:
+          targetType: inline
+          script: |
+            set -euo pipefail
+            proj='$(FILES_PROJECT)'
+            out='$(Build.ArtifactStagingDirectory)/files/app'
+            rm -rf "$out"
+            dotnet restore "$proj"
+            dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+              -o "$out"
+            tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/files.tar.gz" .
+      - task: PublishPipelineArtifact@1
+        displayName: "Publish artifact: files"
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','files')))
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/files.tar.gz'
+          artifact: 'files'
+
+  # ===================== Deploy =====================
+  - stage: Deploy
+    displayName: Deploy to Ubuntu
+    dependsOn: Build
+    condition: and(succeeded(), ${{ parameters.deploy }})
+    jobs:
+    - job: deploy_job
+      displayName: Deploy selected app(s)
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+      # Downloads
+      - download: current
+        displayName: 'Download artifact: discord'
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','discord')))
+        artifact: discord
+      - download: current
+        displayName: 'Download artifact: server'
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','server')))
+        artifact: server
+      - download: current
+        displayName: 'Download artifact: auth'
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','auth')))
+        artifact: auth
+      - download: current
+        displayName: 'Download artifact: files'
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','files')))
+        artifact: files
+
+      # Prepare incoming dir + deploy helper
+      - task: SSH@0
+        displayName: Prepare incoming dir + deploy helper
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          runOptions: inline
+          inline: |
+            set -euo pipefail
+            mkdir -p "$(REMOTE_INCOMING)"
+            cat > /tmp/deploy_inplace.sh << 'EOS'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            UNIT="$1"; DIR="$2"; TAR="$3"; TS="$(date +%Y%m%d%H%M%S)"
+            BACKUP="$DIR/.backup_$TS.tgz"
+            echo "[deploy] unit=$UNIT dir=$DIR tar=$TAR"
+            sudo systemctl stop "$UNIT" || true
+            if [ -d "$DIR" ]; then tar -C "$DIR" -czf "$BACKUP" . || true; fi
+            mkdir -p "$DIR"
+            tar -C "$DIR" -xzf "$TAR"
+            sudo systemctl start "$UNIT"
+            if ! sudo systemctl is-active --quiet "$UNIT"; then
+              echo "[deploy] start failed; rolling back from $BACKUP"
+              if [ -f "$BACKUP" ]; then
+                find "$DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+                tar -C "$DIR" -xzf "$BACKUP"
+                sudo systemctl start "$UNIT" || true
+              fi
+              sudo systemctl status "$UNIT" --no-pager -l
+              exit 1
+            fi
+            echo "[deploy] $UNIT running"
+            EOS
+            chmod +x /tmp/deploy_inplace.sh
+
+      # ---- Discord ----
+      - task: CopyFilesOverSSH@0
+        displayName: Upload discord.tar.gz
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','discord')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          sourceFolder: $(Pipeline.Workspace)/discord
+          contents: discord.tar.gz
+          targetFolder: $(REMOTE_INCOMING)
+          overwrite: true
+      - task: SSH@0
+        displayName: Deploy discord
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','discord')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          runOptions: inline
+          inline: |
+            set -euo pipefail
+            /tmp/deploy_inplace.sh "$(DISCORD_UNIT)" "$(DISCORD_REMOTE_DIR)" "$(REMOTE_INCOMING)/discord.tar.gz"
+            if ! sudo systemctl is-active --quiet "$(DISCORD_UNIT)"; then
+              echo "Start FAILED for $(DISCORD_UNIT)"
+              sudo journalctl -u "$(DISCORD_UNIT)" --no-pager -n 200
+              exit 1
+            fi
+
+      # ---- Main server ----
+      - task: CopyFilesOverSSH@0
+        displayName: Upload server.tar.gz
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','server')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          sourceFolder: $(Pipeline.Workspace)/server
+          contents: server.tar.gz
+          targetFolder: $(REMOTE_INCOMING)
+          overwrite: true
+      - task: SSH@0
+        displayName: Deploy server
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','server')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          runOptions: inline
+          inline: |
+            set -euo pipefail
+            /tmp/deploy_inplace.sh "$(SERVER_UNIT)" "$(SERVER_REMOTE_DIR)" "$(REMOTE_INCOMING)/server.tar.gz"
+            if ! sudo systemctl is-active --quiet "$(SERVER_UNIT)"; then
+              echo "Start FAILED for $(SERVER_UNIT)"
+              sudo journalctl -u "$(SERVER_UNIT)" --no-pager -n 200
+              exit 1
+            fi
+
+      # ---- Auth ----
+      - task: CopyFilesOverSSH@0
+        displayName: Upload auth.tar.gz
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','auth')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          sourceFolder: $(Pipeline.Workspace)/auth
+          contents: auth.tar.gz
+          targetFolder: $(REMOTE_INCOMING)
+          overwrite: true
+      - task: SSH@0
+        displayName: Deploy auth
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','auth')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          runOptions: inline
+          inline: |
+            set -euo pipefail
+            /tmp/deploy_inplace.sh "$(AUTH_UNIT)" "$(AUTH_REMOTE_DIR)" "$(REMOTE_INCOMING)/auth.tar.gz"
+            if ! sudo systemctl is-active --quiet "$(AUTH_UNIT)"; then
+              echo "Start FAILED for $(AUTH_UNIT)"
+              sudo journalctl -u "$(AUTH_UNIT)" --no-pager -n 200
+              exit 1
+            fi
+
+      # ---- Files ----
+      - task: CopyFilesOverSSH@0
+        displayName: Upload files.tar.gz
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','files')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          sourceFolder: $(Pipeline.Workspace)/files
+          contents: files.tar.gz
+          targetFolder: $(REMOTE_INCOMING)
+          overwrite: true
+      - task: SSH@0
+        displayName: Deploy files
+        condition: and(succeeded(), or(eq('${{ parameters.app }}','all'), eq('${{ parameters.app }}','files')))
+        inputs:
+          sshEndpoint: $(SSH_CONN)
+          runOptions: inline
+          inline: |
+            set -euo pipefail
+            /tmp/deploy_inplace.sh "$(FILES_UNIT)" "$(FILES_REMOTE_DIR)" "$(REMOTE_INCOMING)/files.tar.gz"
+            if ! sudo systemctl is-active --quiet "$(FILES_UNIT)"; then
+              echo "Start FAILED for $(FILES_UNIT)"
+              sudo journalctl -u "$(FILES_UNIT)" --no-pager -n 200
+              exit 1
+            fi

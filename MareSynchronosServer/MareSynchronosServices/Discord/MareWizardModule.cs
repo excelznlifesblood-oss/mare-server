@@ -34,7 +34,7 @@ public partial class MareWizardModule : InteractionModuleBase
         _connectionMultiplexer = connectionMultiplexer;
         _dbContextFactory = dbContextFactory;
     }
-
+    
     [ComponentInteraction("wizard-captcha:*")]
     public async Task WizardCaptcha(bool init = false)
     {
@@ -89,7 +89,7 @@ public partial class MareWizardModule : InteractionModuleBase
 
         await InitOrUpdateInteraction(init, eb, cb).ConfigureAwait(false);
     }
-
+    
     private async Task InitOrUpdateInteraction(bool init, EmbedBuilder eb, ComponentBuilder cb)
     {
         if (init)
@@ -104,7 +104,7 @@ public partial class MareWizardModule : InteractionModuleBase
             await ModifyInteraction(eb, cb).ConfigureAwait(false);
         }
     }
-
+    
     [ComponentInteraction("wizard-captcha-fail:*")]
     public async Task WizardCaptchaFail(int button)
     {
@@ -119,11 +119,11 @@ public partial class MareWizardModule : InteractionModuleBase
 
         await _botServices.LogToChannel($"{Context.User.Mention} FAILED CAPTCHA").ConfigureAwait(false);
     }
-
-
+    
     [ComponentInteraction("wizard-home:*")]
     public async Task StartWizard(bool init = false)
     {
+        _logger.LogInformation("Starting Wizard");
         if (!init && !(await ValidateInteraction().ConfigureAwait(false))) return;
 
         if (!_botServices.VerifiedCaptchaUsers.Contains(Context.Interaction.User.Id))
@@ -133,34 +133,13 @@ public partial class MareWizardModule : InteractionModuleBase
 
         using var mareDb = await GetDbContext().ConfigureAwait(false);
         bool hasAccount = await mareDb.LodeStoneAuth.AnyAsync(u => u.DiscordId == Context.User.Id && u.StartedAt == null).ConfigureAwait(false);
-
-        if (init)
-        {
-            bool isBanned = await mareDb.BannedRegistrations.AnyAsync(u => u.DiscordIdOrLodestoneAuth == Context.User.Id.ToString()).ConfigureAwait(false);
-
-            if (isBanned)
-            {
-                EmbedBuilder ebBanned = new();
-                ebBanned.WithTitle("You are not welcome here");
-                ebBanned.WithDescription("Your Discord account is banned");
-                await RespondAsync(embed: ebBanned.Build(), ephemeral: true).ConfigureAwait(false);
-                return;
-            }
-        }
-#if !DEBUG
-        bool isInAprilFoolsMode = _mareServicesConfiguration.GetValueOrDefault<ulong?>(nameof(ServicesConfiguration.DiscordRoleAprilFools2024), null) != null
-            && DateTime.UtcNow.Month == 4 && DateTime.UtcNow.Day == 1 && DateTime.UtcNow.Year == 2024 && DateTime.UtcNow.Hour >= 10;
-#elif DEBUG
-        bool isInAprilFoolsMode = true;
-#endif
-
+        
         EmbedBuilder eb = new();
         eb.WithTitle("Welcome to the Shonin Sync Service Bot for this server");
         eb.WithDescription("Here is what you can do:" + Environment.NewLine + Environment.NewLine
             + (!hasAccount ? string.Empty : ("- Check your account status press \"ℹ️ User Info\"" + Environment.NewLine))
             + (hasAccount ? string.Empty : ("- Register a new Shonin Sync Account press \"🌒 Register\"" + Environment.NewLine))
             + (!hasAccount ? string.Empty : ("- You lost your secret key press \"🏥 Recover\"" + Environment.NewLine))
-            + (hasAccount ? string.Empty : ("- If you have changed your Discord account press \"🔗 Relink\"" + Environment.NewLine))
             + (!hasAccount ? string.Empty : ("- Create a secondary UIDs press \"2️⃣ Secondary UID\"" + Environment.NewLine))
             + (!hasAccount ? string.Empty : ("- Set a Vanity UID press \"💅 Vanity IDs\"" + Environment.NewLine))
             + (!hasAccount ? string.Empty : ("- Delete your primary or secondary accounts with \"⚠️ Delete\""))
@@ -170,7 +149,6 @@ public partial class MareWizardModule : InteractionModuleBase
         if (!hasAccount)
         {
             cb.WithButton("Register", "wizard-register", ButtonStyle.Primary, new Emoji("🌒"));
-            cb.WithButton("Relink", "wizard-relink", ButtonStyle.Secondary, new Emoji("🔗"));
         }
         else
         {
@@ -180,7 +158,7 @@ public partial class MareWizardModule : InteractionModuleBase
             cb.WithButton("Vanity IDs", "wizard-vanity", ButtonStyle.Secondary, new Emoji("💅"));
             cb.WithButton("Delete", "wizard-delete", ButtonStyle.Danger, new Emoji("⚠️"));
         }
-
+        _logger.LogDebug("Embed built");
         await InitOrUpdateInteraction(init, eb, cb).ConfigureAwait(false);
     }
 
@@ -303,23 +281,6 @@ public partial class MareWizardModule : InteractionModuleBase
             gids.WithPlaceholder("Select a Syncshell");
             cb.WithSelectMenu(gids);
         }
-    }
-
-    private async Task<string> GenerateLodestoneAuth(ulong discordid, string hashedLodestoneId, MareDbContext dbContext)
-    {
-        var auth = StringUtils.GenerateRandomString(12, "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz");
-        LodeStoneAuth lsAuth = new LodeStoneAuth()
-        {
-            DiscordId = discordid,
-            HashedLodestoneId = hashedLodestoneId,
-            LodestoneAuthString = auth,
-            StartedAt = DateTime.UtcNow
-        };
-
-        dbContext.Add(lsAuth);
-        await dbContext.SaveChangesAsync().ConfigureAwait(false);
-
-        return (auth);
     }
 
     private int? ParseCharacterIdFromLodestoneUrl(string lodestoneUrl)
