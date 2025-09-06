@@ -57,7 +57,11 @@ public class DiscordBotServices
     {
         if (_guild == null) return;
         Logger.LogInformation("LogToChannel: {msg}", msg);
-        var logChannelId = _configuration.GetValueOrDefault<ulong?>(nameof(ServicesConfiguration.DiscordChannelForBotLog), null);
+        var serverConfigs =
+            _configuration.GetValueOrDefault<IList<DiscordServerConfiguration>>(
+                nameof(ServicesConfiguration.ServerConfigurations), new List<DiscordServerConfiguration>());
+        var config = serverConfigs.FirstOrDefault(x => x.ServerId == _guild.Id);
+        var logChannelId = config?.DiscordChannelForBotLog;
         if (logChannelId == null) return;
         if (logChannelId != _logChannelId)
         {

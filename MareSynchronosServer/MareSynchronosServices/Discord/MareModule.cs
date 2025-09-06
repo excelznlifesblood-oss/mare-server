@@ -106,8 +106,9 @@ public class MareModule : InteractionModuleBase
             await c.PostAsJsonAsync(new Uri(_mareServicesConfiguration.GetValue<Uri>
                 (nameof(ServicesConfiguration.MainServerAddress)), "/msgc/sendMessage"), new ClientMessage(messageType, message, uid ?? string.Empty))
                 .ConfigureAwait(false);
-
-            var discordChannelForMessages = _mareServicesConfiguration.GetValueOrDefault<ulong?>(nameof(ServicesConfiguration.DiscordChannelForMessages), null);
+            var serverConfigs = _mareServicesConfiguration.GetValueOrDefault(nameof(ServicesConfiguration.ServerConfigurations), new List<DiscordServerConfiguration>());
+            var server = serverConfigs.FirstOrDefault(x => x.ServerId == Context.Guild.Id);
+            var discordChannelForMessages = server?.DiscordChannelForMessages;
             if (uid == null && discordChannelForMessages != null)
             {
                 var discordChannel = await Context.Guild.GetChannelAsync(discordChannelForMessages.Value) as IMessageChannel;

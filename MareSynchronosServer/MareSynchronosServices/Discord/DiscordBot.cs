@@ -106,19 +106,22 @@ internal class DiscordBot : IHostedService
 
     private async Task DiscordClient_Ready()
     {
-        var guild = (await _discordClient.Rest.GetGuildsAsync().ConfigureAwait(false)).First();
-        await _interactionModule.RegisterCommandsToGuildAsync(guild.Id, true).ConfigureAwait(false);
-        _clientConnectedCts?.Cancel();
-        _clientConnectedCts?.Dispose();
-        _clientConnectedCts = new();
-        _ = UpdateStatusAsync(_clientConnectedCts.Token);
+        var guilds = await _discordClient.Rest.GetGuildsAsync().ConfigureAwait(false);
+        foreach (var guild in guilds)
+        {
+            await _interactionModule.RegisterCommandsToGuildAsync(guild.Id, true).ConfigureAwait(false);
+            _clientConnectedCts?.Cancel();
+            _clientConnectedCts?.Dispose();
+            _clientConnectedCts = new();
+            _ = UpdateStatusAsync(_clientConnectedCts.Token);
 
-        await CreateOrUpdateModal(guild).ConfigureAwait(false);
-        _botServices.UpdateGuild(guild);
-        await _botServices.LogToChannel("Bot startup complete.").ConfigureAwait(false);
-        _ = UpdateVanityRoles(guild, _clientConnectedCts.Token);
-        _ = RemoveUsersNotInVanityRole(_clientConnectedCts.Token);
-        _ = RemoveUnregisteredUsers(_clientConnectedCts.Token);
+            await CreateOrUpdateModal(guild).ConfigureAwait(false);
+            _botServices.UpdateGuild(guild);
+            await _botServices.LogToChannel("Bot startup complete.").ConfigureAwait(false);
+            _ = UpdateVanityRoles(guild, _clientConnectedCts.Token);
+            _ = RemoveUsersNotInVanityRole(_clientConnectedCts.Token);
+            _ = RemoveUnregisteredUsers(_clientConnectedCts.Token);
+        }
     }
 
     private async Task UpdateVanityRoles(RestGuild guild, CancellationToken token)
@@ -155,30 +158,34 @@ internal class DiscordBot : IHostedService
     {
         _logger.LogInformation("Creating Wizard: Getting Channel");
 
-        var discordChannelForCommands = _configurationService.GetValue<ulong?>(nameof(ServicesConfiguration.DiscordChannelForCommands));
-        if (discordChannelForCommands == null)
+        var serverConfigs = _configurationService.GetValue<IList<DiscordServerConfiguration>>(nameof(ServicesConfiguration.ServerConfigurations));
+        foreach (var serverConfig in serverConfigs)
         {
-            _logger.LogWarning("Creating Wizard: No channel configured");
-            return;
-        }
-
-        IUserMessage? message = null;
-        var socketchannel = await _discordClient.GetChannelAsync(discordChannelForCommands.Value).ConfigureAwait(false) as SocketTextChannel;
-        var pinnedMessages = await socketchannel.GetPinnedMessagesAsync().ConfigureAwait(false);
-        foreach (var msg in pinnedMessages)
-        {
-            _logger.LogInformation("Creating Wizard: Checking message id {id}, author is: {author}, hasEmbeds: {embeds}", msg.Id, msg.Author.Id, msg.Embeds.Any());
-            if (msg.Author.Id == _discordClient.CurrentUser.Id
-                && msg.Embeds.Any())
+            var discordChannelForCommands = serverConfig.DiscordChannelForCommands;
+            if (discordChannelForCommands == null)
             {
-                message = await socketchannel.GetMessageAsync(msg.Id).ConfigureAwait(false) as IUserMessage;
-                break;
+                _logger.LogWarning("Creating Wizard: No channel configured");
+                return;
             }
+
+            IUserMessage? message = null;
+            var socketchannel = await _discordClient.GetChannelAsync(discordChannelForCommands.Value).ConfigureAwait(false) as SocketTextChannel;
+            var pinnedMessages = await socketchannel.GetPinnedMessagesAsync().ConfigureAwait(false);
+            foreach (var msg in pinnedMessages)
+            {
+                _logger.LogInformation("Creating Wizard: Checking message id {id}, author is: {author}, hasEmbeds: {embeds}", msg.Id, msg.Author.Id, msg.Embeds.Any());
+                if (msg.Author.Id == _discordClient.CurrentUser.Id
+                    && msg.Embeds.Any())
+                {
+                    message = await socketchannel.GetMessageAsync(msg.Id).ConfigureAwait(false) as IUserMessage;
+                    break;
+                }
+            }
+
+            _logger.LogInformation("Creating Wizard: Found message id: {id}", message?.Id ?? 0);
+
+            await GenerateOrUpdateWizardMessage(socketchannel, message).ConfigureAwait(false);
         }
-
-        _logger.LogInformation("Creating Wizard: Found message id: {id}", message?.Id ?? 0);
-
-        await GenerateOrUpdateWizardMessage(socketchannel, message).ConfigureAwait(false);
     }
 
     private async Task GenerateOrUpdateWizardMessage(SocketTextChannel channel, IUserMessage? prevMessage)
@@ -315,55 +322,58 @@ internal class DiscordBot : IHostedService
 
     private async Task RemoveUsersNotInVanityRole(CancellationToken token)
     {
-        var guild = (await _discordClient.Rest.GetGuildsAsync().ConfigureAwait(false)).First();
+        var guilds = await _discordClient.Rest.GetGuildsAsync().ConfigureAwait(false);
 
-        while (!token.IsCancellationRequested)
+        foreach (var guild in guilds)
         {
-            try
+            while (!token.IsCancellationRequested)
             {
-                _logger.LogInformation($"Cleaning up Vanity UIDs");
-                await _botServices.LogToChannel("Cleaning up Vanity UIDs").ConfigureAwait(false);
-                _logger.LogInformation("Getting rest guild {guildName}", guild.Name);
-                var restGuild = await _discordClient.Rest.GetGuildAsync(guild.Id).ConfigureAwait(false);
-
-                Dictionary<ulong, string> allowedRoleIds = _configurationService.GetValueOrDefault(nameof(ServicesConfiguration.VanityRoles), new Dictionary<ulong, string>());
-                _logger.LogInformation($"Allowed role ids: {string.Join(", ", allowedRoleIds)}");
-
-                if (allowedRoleIds.Any())
+                try
                 {
-                    using var db = await _dbContextFactory.CreateDbContextAsync().ConfigureAwait(false);
+                    _logger.LogInformation($"Cleaning up Vanity UIDs");
+                    await _botServices.LogToChannel("Cleaning up Vanity UIDs").ConfigureAwait(false);
+                    _logger.LogInformation("Getting rest guild {guildName}", guild.Name);
+                    var restGuild = await _discordClient.Rest.GetGuildAsync(guild.Id).ConfigureAwait(false);
 
-                    var aliasedUsers = await db.LodeStoneAuth.Include("User")
-                        .Where(c => c.User != null && !string.IsNullOrEmpty(c.User.Alias)).ToListAsync().ConfigureAwait(false);
-                    var aliasedGroups = await db.Groups.Include(u => u.Owner)
-                        .Where(c => !string.IsNullOrEmpty(c.Alias)).ToListAsync().ConfigureAwait(false);
+                    Dictionary<ulong, string> allowedRoleIds = _configurationService.GetValueOrDefault(nameof(ServicesConfiguration.VanityRoles), new Dictionary<ulong, string>());
+                    _logger.LogInformation($"Allowed role ids: {string.Join(", ", allowedRoleIds)}");
 
-                    foreach (var lodestoneAuth in aliasedUsers)
+                    if (allowedRoleIds.Any())
                     {
-                        await CheckVanityForUser(restGuild, allowedRoleIds, db, lodestoneAuth, token).ConfigureAwait(false);
+                        using var db = await _dbContextFactory.CreateDbContextAsync().ConfigureAwait(false);
 
-                        await Task.Delay(1000, token).ConfigureAwait(false);
+                        var aliasedUsers = await db.LodeStoneAuth.Include("User")
+                            .Where(c => c.User != null && !string.IsNullOrEmpty(c.User.Alias)).ToListAsync().ConfigureAwait(false);
+                        var aliasedGroups = await db.Groups.Include(u => u.Owner)
+                            .Where(c => !string.IsNullOrEmpty(c.Alias)).ToListAsync().ConfigureAwait(false);
+
+                        foreach (var lodestoneAuth in aliasedUsers)
+                        {
+                            await CheckVanityForUser(restGuild, allowedRoleIds, db, lodestoneAuth, token).ConfigureAwait(false);
+
+                            await Task.Delay(1000, token).ConfigureAwait(false);
+                        }
+
+                        foreach (var group in aliasedGroups)
+                        {
+                            await CheckVanityForGroup(restGuild, allowedRoleIds, db, group, token).ConfigureAwait(false);
+
+                            await Task.Delay(1000, token).ConfigureAwait(false);
+                        }
                     }
-
-                    foreach (var group in aliasedGroups)
+                    else
                     {
-                        await CheckVanityForGroup(restGuild, allowedRoleIds, db, group, token).ConfigureAwait(false);
-
-                        await Task.Delay(1000, token).ConfigureAwait(false);
+                        _logger.LogInformation("No roles for command defined, no cleanup performed");
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _logger.LogInformation("No roles for command defined, no cleanup performed");
+                    _logger.LogError(ex, "Something failed during checking vanity user uids");
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Something failed during checking vanity user uids");
-            }
 
-            _logger.LogInformation("Vanity UID cleanup complete");
-            await Task.Delay(TimeSpan.FromHours(12), token).ConfigureAwait(false);
+                _logger.LogInformation("Vanity UID cleanup complete");
+                await Task.Delay(TimeSpan.FromHours(12), token).ConfigureAwait(false);
+            }
         }
     }
 
