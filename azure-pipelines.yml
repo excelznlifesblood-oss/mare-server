@@ -107,8 +107,7 @@ stages:
           out='$(Build.ArtifactStagingDirectory)/discord/app'
           rm -rf "$out"
           dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
-          dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -o "$out" --no-restore
+          dotnet publish "$proj" -c Release -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/discord.tar.gz" .
 
     - task: PublishPipelineArtifact@1
@@ -130,8 +129,7 @@ stages:
           out='$(Build.ArtifactStagingDirectory)/server/app'
           rm -rf "$out"
           dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
-          dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -o "$out" --no-restore
+          dotnet publish "$proj" -c Release -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/server.tar.gz" .
 
     - task: PublishPipelineArtifact@1
@@ -153,8 +151,7 @@ stages:
           out='$(Build.ArtifactStagingDirectory)/auth/app'
           rm -rf "$out"
           dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
-          dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -o "$out" --no-restore
+          dotnet publish "$proj" -c Release -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/auth.tar.gz" .
 
     - task: PublishPipelineArtifact@1
@@ -176,8 +173,7 @@ stages:
           out='$(Build.ArtifactStagingDirectory)/files/app'
           rm -rf "$out"
           dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
-          dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -o "$out" --no-restore
+          dotnet publish "$proj" -c Release -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/files.tar.gz" .
     - task: PublishPipelineArtifact@1
       displayName: "Publish artifact: files"
