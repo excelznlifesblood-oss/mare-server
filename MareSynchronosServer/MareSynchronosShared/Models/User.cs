@@ -17,4 +17,7 @@ public class User
     public DateTime LastLoggedIn { get; set; }
     [MaxLength(15)]
     public string Alias { get; set; }
+    
+    public bool IsLimitedUser { get; set; } = false;
+    public DateTimeOffset? LimitedUserExpiry { get; set; } = null;
 }

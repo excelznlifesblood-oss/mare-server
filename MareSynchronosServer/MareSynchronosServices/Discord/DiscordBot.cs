@@ -55,8 +55,8 @@ internal class DiscordBot : IHostedService
             _interactionModule?.Dispose();
             _interactionModule = new InteractionService(_discordClient);
             _interactionModule.Log += Log;
-            await _interactionModule.AddModuleAsync(typeof(MareModule), _services).ConfigureAwait(false);
-            await _interactionModule.AddModuleAsync(typeof(MareWizardModule), _services).ConfigureAwait(false);
+            await _interactionModule.AddModuleAsync(typeof(ShoninModule), _services).ConfigureAwait(false);
+            await _interactionModule.AddModuleAsync(typeof(ShoninWizardModule), _services).ConfigureAwait(false);
 
             await _discordClient.LoginAsync(TokenType.Bot, token).ConfigureAwait(false);
             await _discordClient.StartAsync().ConfigureAwait(false);
@@ -116,6 +116,7 @@ internal class DiscordBot : IHostedService
             _ = UpdateStatusAsync(_clientConnectedCts.Token);
 
             await CreateOrUpdateModal(guild).ConfigureAwait(false);
+            await CreateOrUpdateTemporaryAccessModal(guild).ConfigureAwait(false);
             _botServices.UpdateGuild(guild);
             await _botServices.LogToChannel("Bot startup complete.").ConfigureAwait(false);
             _ = UpdateVanityRoles(guild, _clientConnectedCts.Token);
@@ -217,6 +218,72 @@ internal class DiscordBot : IHostedService
         }
     }
 
+    private async Task CreateOrUpdateTemporaryAccessModal(RestGuild guild)
+    {
+        _logger.LogInformation("Creating Temp Access Wizard: Getting Channel");
+
+        var serverConfigs = _configurationService.GetValue<IList<DiscordServerConfiguration>>(nameof(ServicesConfiguration.ServerConfigurations));
+        var serverConfig = serverConfigs.FirstOrDefault(serverConfig => serverConfig.ServerId == guild.Id);
+        var discordChannelForCommands = serverConfig?.DiscordChannelForTemporary;
+        if (discordChannelForCommands == null)
+        {
+            _logger.LogWarning("Creating Temp Access Wizard: No channel configured for server {id}", serverConfig?.ServerId);
+            return;
+        }
+
+        IUserMessage? message = null;
+        var socketchannel = await _discordClient.GetChannelAsync(discordChannelForCommands.Value).ConfigureAwait(false) as SocketTextChannel;
+        var pinnedMessages = await socketchannel.GetPinnedMessagesAsync().ConfigureAwait(false);
+        foreach (var msg in pinnedMessages)
+        {
+            _logger.LogInformation("Creating Temp Access Wizard: Checking message id {id}, author is: {author}, hasEmbeds: {embeds}", msg.Id, msg.Author.Id, msg.Embeds.Any());
+            if (msg.Author.Id == _discordClient.CurrentUser.Id
+                && msg.Embeds.Any())
+            {
+                message = await socketchannel.GetMessageAsync(msg.Id).ConfigureAwait(false) as IUserMessage;
+                break;
+            }
+        }
+
+        _logger.LogInformation("Creating Wizard: Found message id: {id}", message?.Id ?? 0);
+
+        await GenerateTempAccessWizardMessage(socketchannel, message).ConfigureAwait(false);
+    }
+
+    private async Task GenerateTempAccessWizardMessage(SocketTextChannel channel,
+        IUserMessage? prevMessage)
+    {
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.WithTitle("Shonin Sync Bot Interaction Service");
+        eb.WithDescription("Press \"Start\" to interact with this bot!" + Environment.NewLine + Environment.NewLine
+                           + "You can handle all of your Shonin Sync account needs in this server through the easy to use interactive bot prompt. Just follow the instructions!" + Environment.NewLine + Environment.NewLine
+                           + "NOTE: This bot can only generate TEMPORARY access keys. ShoninSync is an internal tool that we are allowing guest access to for ease of interaction with us. Please respect that."
+                           );
+        eb.WithThumbnailUrl("https://github.com/excelznlifesblood-oss/client/releases/download/v1.2.1.2/icon.png");
+        var cb = new ComponentBuilder();
+        cb.WithButton("Start", style: ButtonStyle.Primary, customId: "temp-wizard-captcha:true", emote: Emoji.Parse("➡️"));
+        if (prevMessage == null)
+        {
+            var msg = await channel.SendMessageAsync(embed: eb.Build(), components: cb.Build()).ConfigureAwait(false);
+            try
+            {
+                await msg.PinAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // swallow
+            }
+        }
+        else
+        {
+            await prevMessage.ModifyAsync(p =>
+            {
+                p.Embed = eb.Build();
+                p.Components = cb.Build();
+            }).ConfigureAwait(false);
+        }
+    }
+    
     private Task Log(LogMessage msg)
     {
         switch (msg.Severity)

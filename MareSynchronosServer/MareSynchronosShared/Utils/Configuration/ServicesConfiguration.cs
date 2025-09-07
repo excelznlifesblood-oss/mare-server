@@ -35,4 +35,5 @@ public class DiscordServerConfiguration
     public ulong? DiscordChannelForMessages { get; set; } = null;
     public ulong? DiscordChannelForCommands { get; set; } = null;
     public ulong? DiscordChannelForBotLog { get; set; } = null!;
+    public ulong? DiscordChannelForTemporary { get; set; } = null;
 }

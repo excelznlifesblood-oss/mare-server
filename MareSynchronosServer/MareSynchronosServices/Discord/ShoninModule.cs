@@ -12,14 +12,14 @@ using MareSynchronosShared.Utils.Configuration;
 
 namespace MareSynchronosServices.Discord;
 
-public class MareModule : InteractionModuleBase
+public class ShoninModule : InteractionModuleBase
 {
-    private readonly ILogger<MareModule> _logger;
+    private readonly ILogger<ShoninModule> _logger;
     private readonly IServiceProvider _services;
     private readonly IConfigurationService<ServicesConfiguration> _mareServicesConfiguration;
     private readonly IConnectionMultiplexer _connectionMultiplexer;
 
-    public MareModule(ILogger<MareModule> logger, IServiceProvider services,
+    public ShoninModule(ILogger<ShoninModule> logger, IServiceProvider services,
         IConfigurationService<ServicesConfiguration> mareServicesConfiguration,
         IConnectionMultiplexer connectionMultiplexer)
     {

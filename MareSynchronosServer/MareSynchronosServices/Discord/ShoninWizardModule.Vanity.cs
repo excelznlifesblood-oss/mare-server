@@ -6,7 +6,7 @@ using System.Text;
 
 namespace MareSynchronosServices.Discord;
 
-public partial class MareWizardModule
+public partial class ShoninWizardModule
 {
     [ComponentInteraction("wizard-vanity")]
     public async Task ComponentVanity()

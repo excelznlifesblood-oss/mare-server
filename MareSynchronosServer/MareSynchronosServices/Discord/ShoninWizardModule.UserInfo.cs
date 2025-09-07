@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MareSynchronosServices.Discord;
 
-public partial class MareWizardModule
+public partial class ShoninWizardModule
 {
     [ComponentInteraction("wizard-userinfo")]
     public async Task ComponentUserinfo()

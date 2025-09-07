@@ -7,7 +7,7 @@ using MareSynchronosShared.Utils;
 
 namespace MareSynchronosServices.Discord;
 
-public partial class MareWizardModule
+public partial class ShoninWizardModule
 {
     [ComponentInteraction("wizard-secondary")]
     public async Task ComponentSecondary()

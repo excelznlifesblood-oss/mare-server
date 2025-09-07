@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MareSynchronosServices.Discord;
 
-public partial class MareWizardModule
+public partial class ShoninWizardModule
 {
     [ComponentInteraction("wizard-recover")]
     public async Task ComponentRecover()

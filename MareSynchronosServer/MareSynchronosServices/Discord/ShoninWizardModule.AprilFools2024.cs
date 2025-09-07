@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace MareSynchronosServices.Discord;
 
-public partial class MareWizardModule : InteractionModuleBase
+public partial class ShoninWizardModule : InteractionModuleBase
 {
     private const int _totalAprilFoolsRoles = 200;
     private const string _persistentFileName = "april2024.json";

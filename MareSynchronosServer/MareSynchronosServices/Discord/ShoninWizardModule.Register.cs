@@ -11,7 +11,7 @@ using Discord.WebSocket;
 
 namespace MareSynchronosServices.Discord;
 
-public partial class MareWizardModule
+public partial class ShoninWizardModule
 {
     [ComponentInteraction("wizard-register")]
     public async Task ComponentRegister()
@@ -87,12 +87,16 @@ public partial class MareWizardModule
         await _botServices.AddRegisteredRoleAsync(Context.Interaction.User).ConfigureAwait(false);
     }
 
-    private async Task<(string, string)> HandleAddUser(MareDbContext db)
+    private async Task<(string, string)> HandleAddUser(MareDbContext db, bool isLimited = false)
     {
         var lodestoneAuth = db.LodeStoneAuth.SingleOrDefault(u => u.DiscordId == Context.User.Id);
 
         var user = new User();
-
+        if (isLimited)
+        {
+            user.IsLimitedUser = true;
+            user.LimitedUserExpiry = DateTimeOffset.UtcNow.AddHours(4);
+        }
         var hasValidUid = false;
         while (!hasValidUid)
         {

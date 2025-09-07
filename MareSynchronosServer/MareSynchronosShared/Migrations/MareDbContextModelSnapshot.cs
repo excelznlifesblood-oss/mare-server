@@ -641,6 +641,10 @@ namespace MareSynchronosServer.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_admin");
 
+                    b.Property<bool>("IsLimitedUser")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_limited_user");
+
                     b.Property<bool>("IsModerator")
                         .HasColumnType("boolean")
                         .HasColumnName("is_moderator");
@@ -648,6 +652,10 @@ namespace MareSynchronosServer.Migrations
                     b.Property<DateTime>("LastLoggedIn")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_logged_in");
+
+                    b.Property<DateTimeOffset?>("LimitedUserExpiry")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("limited_user_expiry");
 
                     b.Property<byte[]>("Timestamp")
                         .IsConcurrencyToken()

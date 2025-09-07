@@ -12,9 +12,9 @@ using System.Text.RegularExpressions;
 
 namespace MareSynchronosServices.Discord;
 
-public partial class MareWizardModule : InteractionModuleBase
+public partial class ShoninWizardModule : InteractionModuleBase
 {
-    private ILogger<MareModule> _logger;
+    private ILogger<ShoninModule> _logger;
     private DiscordBotServices _botServices;
     private IConfigurationService<ServerConfiguration> _mareClientConfigurationService;
     private IConfigurationService<ServicesConfiguration> _mareServicesConfiguration;
@@ -22,7 +22,7 @@ public partial class MareWizardModule : InteractionModuleBase
     private readonly IDbContextFactory<MareDbContext> _dbContextFactory;
     private Random random = new();
 
-    public MareWizardModule(ILogger<MareModule> logger, DiscordBotServices botServices,
+    public ShoninWizardModule(ILogger<ShoninModule> logger, DiscordBotServices botServices,
         IConfigurationService<ServerConfiguration> mareClientConfigurationService,
         IConfigurationService<ServicesConfiguration> mareServicesConfiguration,
         IConnectionMultiplexer connectionMultiplexer, IDbContextFactory<MareDbContext> dbContextFactory)
