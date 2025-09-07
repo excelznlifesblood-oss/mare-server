@@ -159,33 +159,31 @@ internal class DiscordBot : IHostedService
         _logger.LogInformation("Creating Wizard: Getting Channel");
 
         var serverConfigs = _configurationService.GetValue<IList<DiscordServerConfiguration>>(nameof(ServicesConfiguration.ServerConfigurations));
-        foreach (var serverConfig in serverConfigs)
+        var serverConfig = serverConfigs.FirstOrDefault(serverConfig => serverConfig.ServerId == guild.Id);
+        var discordChannelForCommands = serverConfig?.DiscordChannelForCommands;
+        if (discordChannelForCommands == null)
         {
-            var discordChannelForCommands = serverConfig.DiscordChannelForCommands;
-            if (discordChannelForCommands == null)
-            {
-                _logger.LogWarning("Creating Wizard: No channel configured");
-                return;
-            }
-
-            IUserMessage? message = null;
-            var socketchannel = await _discordClient.GetChannelAsync(discordChannelForCommands.Value).ConfigureAwait(false) as SocketTextChannel;
-            var pinnedMessages = await socketchannel.GetPinnedMessagesAsync().ConfigureAwait(false);
-            foreach (var msg in pinnedMessages)
-            {
-                _logger.LogInformation("Creating Wizard: Checking message id {id}, author is: {author}, hasEmbeds: {embeds}", msg.Id, msg.Author.Id, msg.Embeds.Any());
-                if (msg.Author.Id == _discordClient.CurrentUser.Id
-                    && msg.Embeds.Any())
-                {
-                    message = await socketchannel.GetMessageAsync(msg.Id).ConfigureAwait(false) as IUserMessage;
-                    break;
-                }
-            }
-
-            _logger.LogInformation("Creating Wizard: Found message id: {id}", message?.Id ?? 0);
-
-            await GenerateOrUpdateWizardMessage(socketchannel, message).ConfigureAwait(false);
+            _logger.LogWarning("Creating Wizard: No channel configured for server {id}", serverConfig?.ServerId);
+            return;
         }
+
+        IUserMessage? message = null;
+        var socketchannel = await _discordClient.GetChannelAsync(discordChannelForCommands.Value).ConfigureAwait(false) as SocketTextChannel;
+        var pinnedMessages = await socketchannel.GetPinnedMessagesAsync().ConfigureAwait(false);
+        foreach (var msg in pinnedMessages)
+        {
+            _logger.LogInformation("Creating Wizard: Checking message id {id}, author is: {author}, hasEmbeds: {embeds}", msg.Id, msg.Author.Id, msg.Embeds.Any());
+            if (msg.Author.Id == _discordClient.CurrentUser.Id
+                && msg.Embeds.Any())
+            {
+                message = await socketchannel.GetMessageAsync(msg.Id).ConfigureAwait(false) as IUserMessage;
+                break;
+            }
+        }
+
+        _logger.LogInformation("Creating Wizard: Found message id: {id}", message?.Id ?? 0);
+
+        await GenerateOrUpdateWizardMessage(socketchannel, message).ConfigureAwait(false);
     }
 
     private async Task GenerateOrUpdateWizardMessage(SocketTextChannel channel, IUserMessage? prevMessage)
