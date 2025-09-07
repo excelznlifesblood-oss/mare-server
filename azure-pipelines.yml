@@ -106,9 +106,8 @@ stages:
           proj='$(DISCORD_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/discord/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/discord.tar.gz" .
 
@@ -130,9 +129,8 @@ stages:
           proj='$(SERVER_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/server/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/server.tar.gz" .
 
@@ -154,9 +152,8 @@ stages:
           proj='$(AUTH_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/auth/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/auth.tar.gz" .
 
@@ -178,9 +175,8 @@ stages:
           proj='$(FILES_PROJECT)'
           out='$(Build.ArtifactStagingDirectory)/files/app'
           rm -rf "$out"
-          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config" -r linux-x64
+          dotnet restore "$proj" --configfile "$(Build.SourcesDirectory)/nuget.config"
           dotnet publish "$proj" -c Release -r linux-x64 --self-contained true \
-            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
             -o "$out" --no-restore
           tar -C "$out" -czf "$(Build.ArtifactStagingDirectory)/files.tar.gz" .
     - task: PublishPipelineArtifact@1
