@@ -158,51 +158,8 @@ public partial class MareHub
             throw new System.Exception($"Max groups for user is {_maxExistingGroupsByUser}, max joined groups is {_maxJoinedGroupsByUser}.");
         }
 
-        var gid = StringUtils.GenerateRandomString(12);
-        while (await DbContext.Groups.AnyAsync(g => g.GID == "MSS-" + gid).ConfigureAwait(false))
-        {
-            gid = StringUtils.GenerateRandomString(12);
-        }
-        gid = "MSS-" + gid;
-
-        var passwd = StringUtils.GenerateRandomString(16);
-        using var sha = SHA256.Create();
-        var hashedPw = StringUtils.Sha256String(passwd);
-
-        UserDefaultPreferredPermission defaultPermissions = await DbContext.UserDefaultPreferredPermissions.SingleAsync(u => u.UserUID == UserUID).ConfigureAwait(false);
-
-        Group newGroup = new()
-        {
-            GID = gid,
-            HashedPassword = hashedPw,
-            InvitesEnabled = true,
-            OwnerUID = UserUID,
-            PreferDisableAnimations = defaultPermissions.DisableGroupAnimations,
-            PreferDisableSounds = defaultPermissions.DisableGroupSounds,
-            PreferDisableVFX = defaultPermissions.DisableGroupVFX
-        };
-
-        GroupPair initialPair = new()
-        {
-            GroupGID = newGroup.GID,
-            GroupUserUID = UserUID,
-            IsPinned = true,
-        };
-
-        GroupPairPreferredPermission initialPrefPermissions = new()
-        {
-            UserUID = UserUID,
-            GroupGID = newGroup.GID,
-            DisableSounds = defaultPermissions.DisableGroupSounds,
-            DisableAnimations = defaultPermissions.DisableGroupAnimations,
-            DisableVFX = defaultPermissions.DisableGroupAnimations
-        };
-
-        await DbContext.Groups.AddAsync(newGroup).ConfigureAwait(false);
-        await DbContext.GroupPairs.AddAsync(initialPair).ConfigureAwait(false);
-        await DbContext.GroupPairPreferredPermissions.AddAsync(initialPrefPermissions).ConfigureAwait(false);
-        await DbContext.SaveChangesAsync().ConfigureAwait(false);
-
+        var (newGroup, initialPrefPermissions, initialPair, passwd, gid) = await SyncshellCreator
+            .CreateSyncshell(DbContext, UserUID).ConfigureAwait(false);
         var self = await DbContext.Users.SingleAsync(u => u.UID == UserUID).ConfigureAwait(false);
 
         await Clients.User(UserUID).Client_GroupSendFullInfo(new GroupFullInfoDto(newGroup.ToGroupData(), self.ToUserData(),

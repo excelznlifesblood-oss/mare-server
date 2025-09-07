@@ -33,6 +33,8 @@ public class ServerConfiguration : MareConfigurationBase
     public bool RunPermissionCleanupOnStartup { get; set; } = true;
     public int HubExecutionConcurrencyFilter { get; set; } = 50;
 
+    public IList<CommunitySyncshellConfig> CommunitySyncshellConfigs  { get; set; } = new List<CommunitySyncshellConfig>();
+    
     public override string ToString()
     {
         StringBuilder sb = new();
@@ -49,4 +51,10 @@ public class ServerConfiguration : MareConfigurationBase
         sb.AppendLine($"{nameof(HubExecutionConcurrencyFilter)} => {HubExecutionConcurrencyFilter}");
         return sb.ToString();
     }
+}
+
+public class CommunitySyncshellConfig
+{
+    public string VanityId { get; set; }
+    public string PW { get; set; }
 }
