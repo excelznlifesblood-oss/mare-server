@@ -192,7 +192,7 @@ internal class DiscordBot : IHostedService
         eb.WithTitle("Shonin Sync Bot Interaction Service");
         eb.WithDescription("Press \"Start\" to interact with this bot!" + Environment.NewLine + Environment.NewLine
             + "You can handle all of your Shonin Sync account needs in this server through the easy to use interactive bot prompt. Just follow the instructions!");
-        eb.WithThumbnailUrl("https://raw.githubusercontent.com/MareSynchronos/repo/main/MareSynchronos/images/icon.png");
+        eb.WithThumbnailUrl("https://github.com/excelznlifesblood-oss/client/releases/download/v1.2.1.2/icon.png");
         var cb = new ComponentBuilder();
         cb.WithButton("Start", style: ButtonStyle.Primary, customId: "wizard-captcha:true", emote: Emoji.Parse("➡️"));
         if (prevMessage == null)
