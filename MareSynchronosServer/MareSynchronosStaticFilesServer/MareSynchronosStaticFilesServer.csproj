@@ -31,7 +31,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.0" />
-    <PackageReference Include="ShoninSync.API" Version="1.1.1-beta.feature-guest-access-discord.72" />
+    <PackageReference Include="ShoninSync.API" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>
