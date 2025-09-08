@@ -106,6 +106,8 @@ public class Startup
             services.AddHostedService<ClientPairPermissionsCleanupService>();
             services.AddSingleton<CommunitySyncshellAutoGenerate>();
             services.AddHostedService(provider => provider.GetService<CommunitySyncshellAutoGenerate>());
+            services.AddSingleton<TemporaryUserExpiryService>();
+            services.AddHostedService(provider => provider.GetService<TemporaryUserExpiryService>());
         }
 
         services.AddSingleton<GPoseLobbyDistributionService>();

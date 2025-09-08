@@ -62,7 +62,7 @@ public partial class ShoninWizardModule
         if (!(await ValidateInteraction().ConfigureAwait(false))) return;
 
         _logger.LogInformation("{method}:{userId}", nameof(ComponentRegisterVerifyCheck), Context.Interaction.User.Id);
-
+        await DeferAsync().ConfigureAwait(false);
         EmbedBuilder eb = new();
         ComponentBuilder cb = new();
         eb.WithColor(Color.Green);
@@ -82,8 +82,8 @@ public partial class ShoninWizardModule
                            + "You should connect as soon as possible to not get caught by the automatic cleanup process."
                            + Environment.NewLine
                            + "Have fun.");
-        AddHome(cb);
-        await ModifyInteraction(eb, cb).ConfigureAwait(false);
+        await FollowupAsync(null, null, false, true, null, null, cb.Build(), eb.Build())
+            .ConfigureAwait(false);
         await _botServices.AddRegisteredRoleAsync(Context.Interaction.User).ConfigureAwait(false);
     }
 
@@ -92,11 +92,7 @@ public partial class ShoninWizardModule
         var lodestoneAuth = db.LodeStoneAuth.SingleOrDefault(u => u.DiscordId == Context.User.Id);
 
         var user = new User();
-        if (isLimited)
-        {
-            user.IsLimitedUser = true;
-            user.LimitedUserExpiry = DateTimeOffset.UtcNow.AddHours(4);
-        }
+
         var hasValidUid = false;
         while (!hasValidUid)
         {
@@ -105,11 +101,26 @@ public partial class ShoninWizardModule
             user.UID = uid;
             hasValidUid = true;
         }
+        if (isLimited)
+        {
+            var lifetime =
+                _mareServicesConfiguration.GetValueOrDefault(
+                    nameof(ServicesConfiguration.TemporaryUserLifetimeInHours), 4);
+            user.IsLimitedUser = true;
+            user.LimitedUserExpiry = DateTimeOffset.UtcNow.AddHours(lifetime);
+        }
 
         // make the first registered user on the service to admin
         if (!await db.Users.AnyAsync().ConfigureAwait(false))
         {
-            user.IsAdmin = true;
+            if (!isLimited)
+            {
+                user.IsAdmin = true;
+            }
+            else
+            {
+                _logger.LogCritical("Temporary Users cannot join prior to an admin user existing.");
+            }
         }
 
         user.LastLoggedIn = DateTime.UtcNow;
@@ -124,7 +135,36 @@ public partial class ShoninWizardModule
 
         await db.Users.AddAsync(user).ConfigureAwait(false);
         await db.Auth.AddAsync(auth).ConfigureAwait(false);
+        
+        var serverConfigs = _mareServicesConfiguration.GetValueOrDefault<IList<DiscordServerConfiguration>>(
+            nameof(ServicesConfiguration.ServerConfigurations),
+            new List<DiscordServerConfiguration>());
+        var serverConfig = serverConfigs.FirstOrDefault(x => x.ServerId == Context.Guild.Id);
+        if (serverConfig != null)
+        {
+            //We have a valid server. Automatically pair the user to the syncshell.
+            var group = await 
+                db.Groups.FirstOrDefaultAsync(x => x.Alias.Equals(serverConfig.SyncshellVanityId)).ConfigureAwait(false);
 
+            GroupPair initialPair = new()
+            {
+                GroupGID = group.GID,
+                GroupUserUID = user.UID,
+                IsPinned = true,
+            };
+
+            GroupPairPreferredPermission initialPrefPermissions = new()
+            {
+                UserUID = user.UID,
+                GroupGID = group.GID,
+                DisableSounds = false,
+                DisableAnimations = false,
+                DisableVFX = false
+            };
+            await db.GroupPairs.AddAsync(initialPair).ConfigureAwait(false);
+            await db.GroupPairPreferredPermissions.AddAsync(initialPrefPermissions).ConfigureAwait(false);
+        }
+        
         lodestoneAuth.StartedAt = null;
         lodestoneAuth.User = user;
 

@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using MareSynchronosShared.Models;
+using MareSynchronosShared.Utils.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 namespace MareSynchronosServices.Discord;
@@ -97,34 +98,106 @@ public partial class ShoninWizardModule
         var hasAccount = account != null;
         EmbedBuilder eb = new();
         ComponentBuilder cb = new();
-        if (hasAccount && (!account.User?.IsLimitedUser ?? false))
+        var isPermanentUser = hasAccount && (!account.User?.IsLimitedUser ?? false);
+        var isLimitedUser = hasAccount && (account.User?.IsLimitedUser ?? false);
+        eb.WithTitle("Welcome to the Shonin Sync Service Bot for this server");
+        eb.WithDescription("Here is what you can do:" + Environment.NewLine + Environment.NewLine
+                           + (!isLimitedUser ? string.Empty : ("- Check your account status press \"ℹ️ User Info\"" + Environment.NewLine))
+                           + (!hasAccount ? string.Empty : ("- Join this community's Syncshell \"🌒 Join Syncshell\"" + Environment.NewLine))
+                           + (hasAccount ? string.Empty : ("- Register a new Temporary Shonin Sync Account press \"🌒 Register\"" + Environment.NewLine))
+        );
+        eb.WithColor(Color.Blue);
+        if (!hasAccount)
         {
-            
-            eb.WithTitle("You already have a Permanent Account");
-            eb.WithDescription(
-                "You already have a permanent access account. You do not need this bot.");
+            cb.WithButton("Register", "temp-wizard-register", ButtonStyle.Primary, new Emoji("🌒"));
         }
         else
         {
-            eb.WithTitle("Welcome to the Shonin Sync Service Bot for this server");
-            eb.WithDescription("Here is what you can do:" + Environment.NewLine + Environment.NewLine
-                               + (!hasAccount ? string.Empty : ("- Check your account status press \"ℹ️ User Info\"" + Environment.NewLine))
-                               + (hasAccount ? string.Empty : ("- Register a new Temporary Shonin Sync Account press \"🌒 Register\"" + Environment.NewLine))
-            );
-            eb.WithColor(Color.Blue);
-            if (!hasAccount)
+            if (isLimitedUser)
             {
-                cb.WithButton("Register", "temp-wizard-register", ButtonStyle.Primary, new Emoji("🌒"));
+                cb.WithButton("User Info", "temp-wizard-userinfo", ButtonStyle.Secondary,
+                    new Emoji("ℹ️"));
             }
-            else
-            {
-                cb.WithButton("User Info", "temp-wizard-userinfo", ButtonStyle.Secondary, new Emoji("ℹ️"));
-            }
+            cb.WithButton("Join Syncshell", "temp-wizard-joinsyncshell", ButtonStyle.Secondary,
+                    new Emoji("🌒"));
         }
         
         _logger.LogDebug("Embed built");
         await InitOrUpdateInteraction(init, eb, cb).ConfigureAwait(false);
-    }   
+    }
+
+    [ComponentInteraction("temp-wizard-joinsyncshell")]
+    public async Task TempWizardJoinSyncShell()
+    {
+        await DeferAsync().ConfigureAwait(false);
+        using var db = await _dbContextFactory.CreateDbContextAsync().ConfigureAwait(false);
+        var lodestone = await db.LodeStoneAuth
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(x => x.DiscordId == Context.User.Id).ConfigureAwait(false);
+        if (lodestone == null)
+        {
+            var errorEb = new EmbedBuilder();
+            errorEb.WithColor(Color.Red);
+            errorEb.WithTitle("Error");
+            errorEb.WithDescription("Your Shonin Sync Account somehow doesn't exist. Please try again.");
+            await FollowupAsync(null, null, false, true, null, null, null, errorEb.Build())
+                .ConfigureAwait(false);
+            return;
+        }
+
+        var serverConfigs =
+            _mareServicesConfiguration.GetValueOrDefault<IList<DiscordServerConfiguration>>(
+                nameof(ServicesConfiguration.ServerConfigurations),
+                new List<DiscordServerConfiguration>());
+        var serverConfig = serverConfigs.FirstOrDefault(x => x.ServerId == Context.Guild.Id);
+        if (serverConfig == null)
+        {
+            var errorEb = new EmbedBuilder();
+            errorEb.WithColor(Color.Red);
+            errorEb.WithTitle("Error");
+            errorEb.WithDescription("This community is not properly configured. File a bug report.");
+            await FollowupAsync(null, null, false, true, null, null, null, errorEb.Build())
+                .ConfigureAwait(false);
+            return;
+        }
+
+        var syncshell = await db.Groups
+            .FirstOrDefaultAsync(x => x.Alias.Equals(serverConfig.SyncshellVanityId))
+            .ConfigureAwait(false);
+        if (syncshell == null)
+        {
+            var errorEb = new EmbedBuilder();
+            errorEb.WithColor(Color.Red);
+            errorEb.WithTitle("Error");
+            errorEb.WithDescription("This community is not properly configured. File a bug report.");
+            await FollowupAsync(null, null, false, true, null, null, null, errorEb.Build())
+                .ConfigureAwait(false);
+            return;
+        }
+
+        var groupLink = new GroupPair
+        {
+            GroupGID = syncshell.GID,
+            GroupUserUID = lodestone.User!.UID
+        };
+        GroupPairPreferredPermission initialPrefPermissions = new()
+        {
+            UserUID = lodestone.User!.UID,
+            GroupGID = syncshell.GID,
+            DisableSounds = false,
+            DisableAnimations = false,
+            DisableVFX = false
+        };
+        await db.GroupPairs.AddAsync(groupLink).ConfigureAwait(false);
+        await db.GroupPairPreferredPermissions.AddAsync(initialPrefPermissions).ConfigureAwait(false);
+        await db.SaveChangesAsync().ConfigureAwait(false);
+        var eb = new EmbedBuilder();
+        eb.WithColor(Color.Green);
+        eb.WithTitle("Success!");
+        eb.WithDescription("You have been added to this community's Sync Shell. You may need to re-connect to ShoninSync to see it.");
+        await FollowupAsync(null, null, false, true, null, null, null, eb.Build())
+            .ConfigureAwait(false);
+    }
     
     [ComponentInteraction("temp-wizard-userinfo")]
     public async Task ComponentTempUserinfo()
@@ -203,7 +276,7 @@ public partial class ShoninWizardModule
         if (!(await ValidateInteraction().ConfigureAwait(false))) return;
 
         _logger.LogInformation("{method}:{userId}", nameof(ComponentTempRegisterVerifyCheck), Context.Interaction.User.Id);
-
+        await DeferAsync().ConfigureAwait(false);
         EmbedBuilder eb = new();
         ComponentBuilder cb = new();
         eb.WithColor(Color.Green);
@@ -223,7 +296,7 @@ public partial class ShoninWizardModule
                            + "You should connect as soon as possible to not get caught by the automatic cleanup process."
                            + Environment.NewLine
                            + "Have fun.");
-        AddHome(cb);
-        await ModifyInteraction(eb, cb).ConfigureAwait(false);
+        await FollowupAsync(null, null, false, true, null, null, cb.Build(), eb.Build())
+            .ConfigureAwait(false);
     }
 }

@@ -103,7 +103,7 @@ public partial class MareHub : Hub<IMareHub>, IMareHub
 
         await DbContext.SaveChangesAsync().ConfigureAwait(false);
 
-        return new ConnectionDto(new UserData(dbUser.UID, string.IsNullOrWhiteSpace(dbUser.Alias) ? null : dbUser.Alias))
+        return new ConnectionDto(new UserData(dbUser.UID, string.IsNullOrWhiteSpace(dbUser.Alias) ? null : dbUser.Alias, dbUser.IsLimitedUser))
         {
             CurrentClientVersion = _expectedClientVersion,
             ServerVersion = IMareHub.ApiVersion,

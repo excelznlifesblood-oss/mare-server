@@ -40,14 +40,17 @@ public class CommunitySyncshellAutoGenerate: BackgroundService
             var groups = await db.Groups.Where(x => vanityIds.Contains(x.Alias)).ToListAsync(stoppingToken).ConfigureAwait(false);
             var adminUser = await db.Users.FirstOrDefaultAsync(x => x.IsAdmin, cancellationToken: stoppingToken).ConfigureAwait(false);
 
-            foreach (var config in configs)
+            if (adminUser != null)
             {
-                var group = groups.FirstOrDefault(x => x.Alias.Equals(config.VanityId, StringComparison.OrdinalIgnoreCase));
-                if (group == null)
+                foreach (var config in configs)
                 {
-                    //We need to add a new syncshell.
-                    var (newGroup, initialPrefPermissions, initialPair, passwd, gid) = await SyncshellCreator
-                        .CreateSyncshell(db, adminUser.UID, stoppingToken, config.VanityId, config.PW).ConfigureAwait(false);
+                    var group = groups.FirstOrDefault(x => x.Alias.Equals(config.VanityId, StringComparison.OrdinalIgnoreCase));
+                    if (group == null)
+                    {
+                        //We need to add a new syncshell.
+                        var (newGroup, initialPrefPermissions, initialPair, passwd, gid) = await SyncshellCreator
+                            .CreateSyncshell(db, adminUser.UID, stoppingToken, config.VanityId, config.PW).ConfigureAwait(false);
+                    }
                 }
             }
             

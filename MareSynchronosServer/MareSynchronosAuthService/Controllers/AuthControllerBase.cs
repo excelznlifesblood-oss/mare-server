@@ -52,7 +52,7 @@ public abstract class AuthControllerBase : Controller
         if (!authResult.Success && !authResult.TempBan)
         {
             Logger.LogWarning("Authenticate:INVALID:{id}:{ident}", authResult?.Uid ?? "NOUID", charaIdent);
-            return Unauthorized("The provided secret key is invalid. Verify your Mare accounts existence and/or recover the secret key.");
+            return Unauthorized("The provided secret key is invalid. Either your account was deleted, or it has expired.");
         }
         if (!authResult.Success && authResult.TempBan)
         {

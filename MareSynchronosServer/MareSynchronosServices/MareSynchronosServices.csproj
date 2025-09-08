@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>cba14e50-235d-49ac-8dc5-cacc8398307f</UserSecretsId>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,7 +36,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.0" />
-    <PackageReference Include="ShoninSync.API" Version="1.0.0" />
+    <PackageReference Include="ShoninSync.API" Version="1.1.1-beta.feature-guest-access-discord.72" />
   </ItemGroup>
 
   <ItemGroup>

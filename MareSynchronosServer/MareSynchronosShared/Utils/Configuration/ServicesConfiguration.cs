@@ -6,6 +6,7 @@ public class ServicesConfiguration : MareConfigurationBase
 {
     public string DiscordBotToken { get; set; } = string.Empty;
     public IList<DiscordServerConfiguration> ServerConfigurations { get; set; } = new List<DiscordServerConfiguration>();
+    public int TemporaryUserLifetimeInHours { get; set; } = 4;
     public ulong? DiscordRoleAprilFools2024 { get; set; } = null;
     public ulong? DiscordRoleRegistered { get; set; } = null!;
     public bool KickNonRegisteredUsers { get; set; } = false;
@@ -36,4 +37,5 @@ public class DiscordServerConfiguration
     public ulong? DiscordChannelForCommands { get; set; } = null;
     public ulong? DiscordChannelForBotLog { get; set; } = null!;
     public ulong? DiscordChannelForTemporary { get; set; } = null;
+    public string SyncshellVanityId { get; set; } = null;
 }
