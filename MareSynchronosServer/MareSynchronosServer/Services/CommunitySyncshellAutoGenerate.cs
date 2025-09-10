@@ -48,7 +48,7 @@ public class CommunitySyncshellAutoGenerate: BackgroundService
                     if (group == null)
                     {
                         //We need to add a new syncshell.
-                        var (newGroup, initialPrefPermissions, initialPair, passwd, gid) = await SyncshellCreator
+                        var (newGroup, initialPrefPermissions, initialPair, passwd, gid) = await SyncshellManager
                             .CreateSyncshell(db, adminUser.UID, stoppingToken, config.VanityId, config.PW).ConfigureAwait(false);
                     }
                 }

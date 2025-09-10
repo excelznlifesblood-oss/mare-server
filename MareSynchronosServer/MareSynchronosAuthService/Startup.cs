@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using MareSynchronosServer.Hubs;
+using MareSynchronosServer.Utils;
 using MareSynchronosShared.Data;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;

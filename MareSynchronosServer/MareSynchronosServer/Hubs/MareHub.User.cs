@@ -172,7 +172,7 @@ public partial class MareHub
     {
         _logger.LogCallInfo();
 
-        var pairs = await GetAllPairInfo(UserUID).ConfigureAwait(false);
+        var pairs = await PairDataFetcher.GetAllPairInfo(UserUID).ConfigureAwait(false);
         return pairs.Select(p =>
         {
             return new UserFullPairDto(new UserData(p.Key, p.Value.Alias),

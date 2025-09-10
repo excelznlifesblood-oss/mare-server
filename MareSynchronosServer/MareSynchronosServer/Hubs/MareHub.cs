@@ -45,7 +45,7 @@ public partial class MareHub : Hub<IMareHub>, IMareHub
         IDbContextFactory<MareDbContext> mareDbContextFactory, ILogger<MareHub> logger, SystemInfoService systemInfoService,
         IConfigurationService<ServerConfiguration> configuration, IHttpContextAccessor contextAccessor,
         IRedisDatabase redisDb, OnlineSyncedPairCacheService onlineSyncedPairCacheService, MareCensus mareCensus,
-        GPoseLobbyDistributionService gPoseLobbyDistributionService)
+        GPoseLobbyDistributionService gPoseLobbyDistributionService, PairDataFetcher pairDataFetcher)
     {
         _mareMetrics = mareMetrics;
         _systemInfoService = systemInfoService;
@@ -62,6 +62,7 @@ public partial class MareHub : Hub<IMareHub>, IMareHub
         _onlineSyncedPairCacheService = onlineSyncedPairCacheService;
         _mareCensus = mareCensus;
         _gPoseLobbyDistributionService = gPoseLobbyDistributionService;
+        _pairDataFetcher = pairDataFetcher;
         _logger = new MareHubLogger(this, logger);
         _dbContextLazy = new Lazy<MareDbContext>(() => mareDbContextFactory.CreateDbContext());
     }

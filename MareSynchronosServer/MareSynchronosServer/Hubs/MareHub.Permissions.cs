@@ -45,7 +45,7 @@ public partial class MareHub
         if (!dto.AffectedUsers.Any() && !dto.AffectedGroups.Any()) return;
 
         // get all current pairs in any form
-        var allUsers = await GetAllPairInfo(UserUID).ConfigureAwait(false);
+        var allUsers = await PairDataFetcher.GetAllPairInfo(UserUID).ConfigureAwait(false);
         var ownDefaultPerms = await DbContext.UserDefaultPreferredPermissions.SingleAsync(u => u.UserUID == UserUID).ConfigureAwait(false);
 
         foreach (var user in dto.AffectedUsers)

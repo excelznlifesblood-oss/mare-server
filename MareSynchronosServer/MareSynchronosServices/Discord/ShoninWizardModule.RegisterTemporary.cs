@@ -175,22 +175,7 @@ public partial class ShoninWizardModule
             return;
         }
 
-        var groupLink = new GroupPair
-        {
-            GroupGID = syncshell.GID,
-            GroupUserUID = lodestone.User!.UID
-        };
-        GroupPairPreferredPermission initialPrefPermissions = new()
-        {
-            UserUID = lodestone.User!.UID,
-            GroupGID = syncshell.GID,
-            DisableSounds = false,
-            DisableAnimations = false,
-            DisableVFX = false
-        };
-        await db.GroupPairs.AddAsync(groupLink).ConfigureAwait(false);
-        await db.GroupPairPreferredPermissions.AddAsync(initialPrefPermissions).ConfigureAwait(false);
-        await db.SaveChangesAsync().ConfigureAwait(false);
+        await _syncshellManager.JoinSyncshell(syncshell.GID, lodestone.User!.UID).ConfigureAwait(false);
         var eb = new EmbedBuilder();
         eb.WithColor(Color.Green);
         eb.WithTitle("Success!");

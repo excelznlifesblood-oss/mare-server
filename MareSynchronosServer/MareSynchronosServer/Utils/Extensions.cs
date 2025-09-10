@@ -1,8 +1,8 @@
-﻿using ShoninSync.API.Data;
+﻿using MareSynchronosServer.Hubs;
+using ShoninSync.API.Data;
 using ShoninSync.API.Data.Enum;
 using ShoninSync.API.Data.Extensions;
 using MareSynchronosShared.Models;
-using static MareSynchronosServer.Hubs.MareHub;
 
 namespace MareSynchronosServer.Utils;
 

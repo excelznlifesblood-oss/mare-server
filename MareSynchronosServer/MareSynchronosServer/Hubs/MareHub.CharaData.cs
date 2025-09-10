@@ -186,7 +186,7 @@ public partial class MareHub
             .ToListAsync()
             .ConfigureAwait(false);
 
-        var pairs = (await GetAllPairInfo(UserUID).ConfigureAwait(false));
+        var pairs = (await PairDataFetcher.GetAllPairInfo(UserUID).ConfigureAwait(false));
         var individualPairs = pairs.Where(p => p.Value.IndividuallyPaired && (!p.Value.OwnPermissions?.IsPaused ?? false) && (!p.Value.OtherPermissions?.IsPaused ?? false)).Select(k => k.Key).ToList();
         var allPairs = pairs.Where(p => (!p.Value.OwnPermissions?.IsPaused ?? false) && (!p.Value.OtherPermissions?.IsPaused ?? false)).Select(k => k.Key).ToList();
 
@@ -575,7 +575,7 @@ public partial class MareHub
         if (charaData.AllowedIndividiuals.Any(u => joinedGroups.Contains(u.AllowedGroupGID, StringComparer.Ordinal)))
             return true;
 
-        var pairInfoUploader = await GetAllPairInfo(charaData.UploaderUID).ConfigureAwait(false);
+        var pairInfoUploader = await PairDataFetcher.GetAllPairInfo(charaData.UploaderUID).ConfigureAwait(false);
 
         // check for all pairs
         if (charaData.AccessType == CharaDataAccess.AllPairs)

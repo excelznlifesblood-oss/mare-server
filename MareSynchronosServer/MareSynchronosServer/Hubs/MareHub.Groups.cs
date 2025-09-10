@@ -133,7 +133,7 @@ public partial class MareHub
             var pairIdent = await GetUserIdent(pair.GroupUserUID).ConfigureAwait(false);
             if (string.IsNullOrEmpty(pairIdent)) continue;
 
-            var allUserPairs = await GetAllPairInfo(pair.GroupUserUID).ConfigureAwait(false);
+            var allUserPairs = await PairDataFetcher.GetAllPairInfo(pair.GroupUserUID).ConfigureAwait(false);
 
             var sharedData = await DbContext.CharaDataAllowances.Where(u => u.AllowedGroup != null && u.AllowedGroupGID == dto.GID && u.ParentUploaderUID == pair.GroupUserUID).ToListAsync().ConfigureAwait(false);
             DbContext.CharaDataAllowances.RemoveRange(sharedData);
@@ -158,7 +158,7 @@ public partial class MareHub
             throw new System.Exception($"Max groups for user is {_maxExistingGroupsByUser}, max joined groups is {_maxJoinedGroupsByUser}.");
         }
 
-        var (newGroup, initialPrefPermissions, initialPair, passwd, gid) = await SyncshellCreator
+        var (newGroup, initialPrefPermissions, initialPair, passwd, gid) = await SyncshellManager
             .CreateSyncshell(DbContext, UserUID).ConfigureAwait(false);
         var self = await DbContext.Users.SingleAsync(u => u.UID == UserUID).ConfigureAwait(false);
 
@@ -302,7 +302,7 @@ public partial class MareHub
             return false;
 
         // get all pairs before we join
-        var allUserPairs = (await GetAllPairInfo(UserUID).ConfigureAwait(false));
+        var allUserPairs = (await PairDataFetcher.GetAllPairInfo(UserUID).ConfigureAwait(false));
 
         if (oneTimeInvite != null)
         {
@@ -357,7 +357,7 @@ public partial class MareHub
         var groupPairs = await DbContext.GroupPairs.Include(p => p.GroupUser)
             .Where(p => p.GroupGID == group.GID && p.GroupUserUID != UserUID).ToListAsync().ConfigureAwait(false);
 
-        var userPairsAfterJoin = await GetAllPairInfo(UserUID).ConfigureAwait(false);
+        var userPairsAfterJoin = await PairDataFetcher.GetAllPairInfo(UserUID).ConfigureAwait(false);
 
         foreach (var pair in groupPairs)
         {
@@ -550,7 +550,7 @@ public partial class MareHub
 
         await Clients.User(dto.User.UID).Client_GroupDelete(new GroupDto(dto.Group)).ConfigureAwait(false);
 
-        var userPairs = await GetAllPairInfo(dto.User.UID).ConfigureAwait(false);
+        var userPairs = await PairDataFetcher.GetAllPairInfo(dto.User.UID).ConfigureAwait(false);
         foreach (var groupUserPair in groupPairs)
         {
             await UserGroupLeave(groupUserPair, userIdent, userPairs, dto.User.UID).ConfigureAwait(false);

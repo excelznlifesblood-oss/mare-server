@@ -136,6 +136,11 @@ public partial class ShoninWizardModule
         await db.Users.AddAsync(user).ConfigureAwait(false);
         await db.Auth.AddAsync(auth).ConfigureAwait(false);
         
+        lodestoneAuth.StartedAt = null;
+        lodestoneAuth.User = user;
+
+        await db.SaveChangesAsync().ConfigureAwait(false);
+
         var serverConfigs = _mareServicesConfiguration.GetValueOrDefault<IList<DiscordServerConfiguration>>(
             nameof(ServicesConfiguration.ServerConfigurations),
             new List<DiscordServerConfiguration>());
@@ -146,30 +151,9 @@ public partial class ShoninWizardModule
             var group = await 
                 db.Groups.FirstOrDefaultAsync(x => x.Alias.Equals(serverConfig.SyncshellVanityId)).ConfigureAwait(false);
 
-            GroupPair initialPair = new()
-            {
-                GroupGID = group.GID,
-                GroupUserUID = user.UID,
-                IsPinned = true,
-            };
-
-            GroupPairPreferredPermission initialPrefPermissions = new()
-            {
-                UserUID = user.UID,
-                GroupGID = group.GID,
-                DisableSounds = false,
-                DisableAnimations = false,
-                DisableVFX = false
-            };
-            await db.GroupPairs.AddAsync(initialPair).ConfigureAwait(false);
-            await db.GroupPairPreferredPermissions.AddAsync(initialPrefPermissions).ConfigureAwait(false);
+            await _syncshellManager.JoinSyncshell(group.GID, user.UID).ConfigureAwait(false);
         }
         
-        lodestoneAuth.StartedAt = null;
-        lodestoneAuth.User = user;
-
-        await db.SaveChangesAsync().ConfigureAwait(false);
-
         _botServices.Logger.LogInformation("User registered: {userUID}:{hashedKey}", user.UID, hashedKey);
 
         await _botServices.LogToChannel($"{Context.User.Mention} REGISTER COMPLETE: => {user.UID}").ConfigureAwait(false);

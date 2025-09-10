@@ -9,6 +9,7 @@ using MareSynchronosShared.Utils.Configuration;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using System.Text.RegularExpressions;
+using MareSynchronosServer.Utils;
 
 namespace MareSynchronosServices.Discord;
 
@@ -20,12 +21,16 @@ public partial class ShoninWizardModule : InteractionModuleBase
     private IConfigurationService<ServicesConfiguration> _mareServicesConfiguration;
     private IConnectionMultiplexer _connectionMultiplexer;
     private readonly IDbContextFactory<MareDbContext> _dbContextFactory;
+    private readonly SyncshellManager _syncshellManager;
     private Random random = new();
 
     public ShoninWizardModule(ILogger<ShoninModule> logger, DiscordBotServices botServices,
         IConfigurationService<ServerConfiguration> mareClientConfigurationService,
         IConfigurationService<ServicesConfiguration> mareServicesConfiguration,
-        IConnectionMultiplexer connectionMultiplexer, IDbContextFactory<MareDbContext> dbContextFactory)
+        IConnectionMultiplexer connectionMultiplexer, 
+        IDbContextFactory<MareDbContext> dbContextFactory,
+        SyncshellManager  syncshellManager
+        )
     {
         _logger = logger;
         _botServices = botServices;
@@ -33,6 +38,7 @@ public partial class ShoninWizardModule : InteractionModuleBase
         _mareServicesConfiguration = mareServicesConfiguration;
         _connectionMultiplexer = connectionMultiplexer;
         _dbContextFactory = dbContextFactory;
+        _syncshellManager = syncshellManager;
     }
     
     [ComponentInteraction("wizard-captcha:*")]

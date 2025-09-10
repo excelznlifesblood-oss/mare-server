@@ -1,3 +1,5 @@
+using MareSynchronosServer.Hubs;
+using MareSynchronosServer.Utils;
 using MareSynchronosServices.Discord;
 using MareSynchronosShared.Data;
 using MareSynchronosShared.Metrics;
@@ -66,6 +68,8 @@ public class Startup
         services.AddSingleton<ServerTokenGenerator>();
         services.AddSingleton<DiscordBotServices>();
         services.AddHostedService<DiscordBot>();
+        services.AddTransient<PairDataFetcher>();
+        services.AddTransient<SyncshellManager>();
         services.AddSingleton<IConfigurationService<ServicesConfiguration>, MareConfigurationServiceServer<ServicesConfiguration>>();
         services.AddSingleton<IConfigurationService<ServerConfiguration>, MareConfigurationServiceClient<ServerConfiguration>>();
         services.AddSingleton<IConfigurationService<MareConfigurationBase>, MareConfigurationServiceClient<MareConfigurationBase>>();

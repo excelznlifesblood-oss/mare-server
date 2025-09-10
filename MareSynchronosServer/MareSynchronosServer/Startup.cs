@@ -22,6 +22,7 @@ using MessagePack;
 using MessagePack.Resolvers;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using MareSynchronosServer.Controllers;
+using MareSynchronosServer.Utils;
 using MareSynchronosShared.RequirementHandlers;
 using MareSynchronosShared.Utils.Configuration;
 
@@ -86,7 +87,8 @@ public class Startup
 
         services.Configure<ServerConfiguration>(Configuration.GetRequiredSection("MareSynchronos"));
         services.Configure<MareConfigurationBase>(Configuration.GetRequiredSection("MareSynchronos"));
-
+        services.AddTransient<PairDataFetcher>();
+        services.AddTransient<SyncshellManager>();
         services.AddSingleton<ServerTokenGenerator>();
         services.AddSingleton<SystemInfoService>();
         services.AddSingleton<OnlineSyncedPairCacheService>();
