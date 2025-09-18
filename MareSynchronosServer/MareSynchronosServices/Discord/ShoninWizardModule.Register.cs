@@ -63,6 +63,14 @@ public partial class ShoninWizardModule
 
         _logger.LogInformation("{method}:{userId}", nameof(ComponentRegisterVerifyCheck), Context.Interaction.User.Id);
         await DeferAsync().ConfigureAwait(false);
+        var tempEb = new EmbedBuilder();
+        tempEb.WithColor(Color.Blue);
+        tempEb.WithTitle("Processing...");
+        tempEb.WithDescription(
+            "We are registering your account. This may take a second. Please wait.");
+        await FollowupAsync(null, null, false, true, null, null, null, tempEb.Build())
+            .ConfigureAwait(false);
+
         EmbedBuilder eb = new();
         ComponentBuilder cb = new();
         eb.WithColor(Color.Green);
@@ -150,8 +158,10 @@ public partial class ShoninWizardModule
             //We have a valid server. Automatically pair the user to the syncshell.
             var group = await 
                 db.Groups.FirstOrDefaultAsync(x => x.Alias.Equals(serverConfig.SyncshellVanityId)).ConfigureAwait(false);
-
-            await _syncshellManager.JoinSyncshell(group.GID, user.UID).ConfigureAwait(false);
+            if(group != null)
+            {
+                await _syncshellManager.JoinSyncshell(group.GID, user.UID).ConfigureAwait(false);
+            }
         }
         
         _botServices.Logger.LogInformation("User registered: {userUID}:{hashedKey}", user.UID, hashedKey);

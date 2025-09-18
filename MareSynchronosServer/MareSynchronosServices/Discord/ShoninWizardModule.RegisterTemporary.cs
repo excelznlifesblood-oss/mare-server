@@ -262,6 +262,14 @@ public partial class ShoninWizardModule
 
         _logger.LogInformation("{method}:{userId}", nameof(ComponentTempRegisterVerifyCheck), Context.Interaction.User.Id);
         await DeferAsync().ConfigureAwait(false);
+        var tempEb = new EmbedBuilder();
+        tempEb.WithColor(Color.Blue);
+        tempEb.WithTitle("Processing...");
+        tempEb.WithDescription(
+            "We are registering your account. This may take a second. Please wait.");
+        await FollowupAsync(null, null, false, true, null, null, null, tempEb.Build())
+            .ConfigureAwait(false);
+        
         EmbedBuilder eb = new();
         ComponentBuilder cb = new();
         eb.WithColor(Color.Green);
@@ -281,7 +289,9 @@ public partial class ShoninWizardModule
                            + "You should connect as soon as possible to not get caught by the automatic cleanup process."
                            + Environment.NewLine
                            + "Have fun.");
+
         await FollowupAsync(null, null, false, true, null, null, cb.Build(), eb.Build())
             .ConfigureAwait(false);
+
     }
 }

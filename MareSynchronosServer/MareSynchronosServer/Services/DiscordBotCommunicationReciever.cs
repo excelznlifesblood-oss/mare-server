@@ -14,7 +14,7 @@ using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace MareSynchronosServer.Services;
 
-public class DiscordBotCommunicationReciever: IHostedService
+public class DiscordBotCommunicationReciever: BackgroundService
 {
     private readonly IConfigurationService<ServerConfiguration> _serverConfiguration;
     private readonly IHubContext<MareHub, IMareHub> _hubContext;
@@ -32,8 +32,10 @@ public class DiscordBotCommunicationReciever: IHostedService
         _hubContext = hubContext;
         _redis = redis;
     }
-    
-    public async Task StartAsync(CancellationToken cancellationToken)
+
+
+
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         var config = _serverConfiguration.GetValue<RabbitMQConfiguration>(nameof(ServerConfiguration.RabbitMQ));
         var factory = new ConnectionFactory
@@ -48,8 +50,12 @@ public class DiscordBotCommunicationReciever: IHostedService
         await _clientGroupSendFullInfoChannel.ExchangeDeclareAsync(MessageDispatcherConstants.EXCHANGE_NAME, ExchangeType.Direct, cancellationToken: cancellationToken).ConfigureAwait(false);
         await _clientGroupSendFullInfoChannel.QueueDeclareAsync(MessageDispatcherConstants.QUEUE_NAME, false, false, false, null, cancellationToken: cancellationToken).ConfigureAwait(false);
         await _clientGroupSendFullInfoChannel.QueueBindAsync(queue: MessageDispatcherConstants.QUEUE_NAME, MessageDispatcherConstants.EXCHANGE_NAME, "Client_GroupSendFullInfo", cancellationToken: cancellationToken).ConfigureAwait(false);
-        
-        var groupSendInfoConsumer = new AsyncEventingBasicConsumer(_clientGroupSendFullInfoChannel);
+        await base.StartAsync(cancellationToken).ConfigureAwait(false);
+    }
+    
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+                var groupSendInfoConsumer = new AsyncEventingBasicConsumer(_clientGroupSendFullInfoChannel);
         groupSendInfoConsumer.ReceivedAsync += async (sender, args) =>
         {
             var body = args.Body.ToArray();
@@ -89,9 +95,9 @@ public class DiscordBotCommunicationReciever: IHostedService
                         throw new ArgumentOutOfRangeException();
                 }
             }
-            await _clientGroupSendFullInfoChannel.BasicAckAsync(args.DeliveryTag, false, cancellationToken).ConfigureAwait(false);
+            await _clientGroupSendFullInfoChannel.BasicAckAsync(args.DeliveryTag, false, stoppingToken).ConfigureAwait(false);
         };
-        await _clientGroupSendFullInfoChannel.BasicConsumeAsync(MessageDispatcherConstants.QUEUE_NAME, false, groupSendInfoConsumer, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await _clientGroupSendFullInfoChannel.BasicConsumeAsync(MessageDispatcherConstants.QUEUE_NAME, false, groupSendInfoConsumer, cancellationToken: stoppingToken).ConfigureAwait(false);
   
     }
     
@@ -101,10 +107,10 @@ public class DiscordBotCommunicationReciever: IHostedService
         return await _redis.GetAsync<string>("UID:" + uid).ConfigureAwait(false);
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
         _connection?.Dispose();
         _clientGroupSendFullInfoChannel?.Dispose();
-        return Task.CompletedTask;
+        await base.StopAsync(cancellationToken).ConfigureAwait(false);
     }
 }

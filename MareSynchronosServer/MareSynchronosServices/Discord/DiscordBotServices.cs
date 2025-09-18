@@ -53,14 +53,14 @@ public class DiscordBotServices
         return Task.CompletedTask;
     }
 
-    public async Task LogToChannel(string msg)
+    public async Task LogToChannel(string msg, ulong? guildId = null)
     {
         if (_guild == null) return;
         Logger.LogInformation("LogToChannel: {msg}", msg);
         var serverConfigs =
             _configuration.GetValueOrDefault<IList<DiscordServerConfiguration>>(
                 nameof(ServicesConfiguration.ServerConfigurations), new List<DiscordServerConfiguration>());
-        var config = serverConfigs.FirstOrDefault(x => x.ServerId == _guild.Id);
+        var config = serverConfigs.FirstOrDefault(x => x.ServerId == (guildId ?? _guild.Id));
         var logChannelId = config?.DiscordChannelForBotLog;
         if (logChannelId == null) return;
         if (logChannelId != _logChannelId)
