@@ -12,6 +12,7 @@ public class ServicesConfiguration : MareConfigurationBase
     public bool KickNonRegisteredUsers { get; set; } = false;
     public Uri MainServerAddress { get; set; } = null;
     public Dictionary<ulong, string> VanityRoles { get; set; } = new Dictionary<ulong, string>();
+    public RabbitMQConfiguration RabbitMQ { get; set; }
 
     public override string ToString()
     {
@@ -38,4 +39,12 @@ public class DiscordServerConfiguration
     public ulong? DiscordChannelForBotLog { get; set; } = null!;
     public ulong? DiscordChannelForTemporary { get; set; } = null;
     public string SyncshellVanityId { get; set; } = null;
+}
+
+public class RabbitMQConfiguration
+{
+    public string User { get; set; }
+    public string Password { get; set; }
+    public string Vhost { get; set; }
+    public string Hostname { get; set; }
 }

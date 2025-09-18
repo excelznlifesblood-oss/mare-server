@@ -89,6 +89,7 @@ public class Startup
         services.Configure<MareConfigurationBase>(Configuration.GetRequiredSection("MareSynchronos"));
         services.AddTransient<PairDataFetcher>();
         services.AddTransient<SyncshellManager>();
+        services.AddSingleton<IMessageDispatcher, DummyMessageDispatcher>();
         services.AddSingleton<ServerTokenGenerator>();
         services.AddSingleton<SystemInfoService>();
         services.AddSingleton<OnlineSyncedPairCacheService>();
@@ -110,6 +111,8 @@ public class Startup
             services.AddHostedService(provider => provider.GetService<CommunitySyncshellAutoGenerate>());
             services.AddSingleton<TemporaryUserExpiryService>();
             services.AddHostedService(provider => provider.GetService<TemporaryUserExpiryService>());
+            services.AddSingleton<DiscordBotCommunicationReciever>();
+            services.AddHostedService(provider => provider.GetService<DiscordBotCommunicationReciever>());
         }
 
         services.AddSingleton<GPoseLobbyDistributionService>();

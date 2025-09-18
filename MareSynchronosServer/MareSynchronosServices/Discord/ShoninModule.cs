@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
+using MareSynchronosServices.Tools;
 using MareSynchronosShared.Data;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
@@ -103,35 +104,37 @@ public class ShoninModule : InteractionModuleBase
         try
         {
             using HttpClient c = new HttpClient();
-            await c.PostAsJsonAsync(new Uri(_mareServicesConfiguration.GetValue<Uri>
+            using (await c.PostAsJsonAsync(new Uri(_mareServicesConfiguration.GetValue<Uri>
                 (nameof(ServicesConfiguration.MainServerAddress)), "/msgc/sendMessage"), new ClientMessage(messageType, message, uid ?? string.Empty))
-                .ConfigureAwait(false);
-            var serverConfigs = _mareServicesConfiguration.GetValueOrDefault(nameof(ServicesConfiguration.ServerConfigurations), new List<DiscordServerConfiguration>());
-            var server = serverConfigs.FirstOrDefault(x => x.ServerId == Context.Guild.Id);
-            var discordChannelForMessages = server?.DiscordChannelForMessages;
-            if (uid == null && discordChannelForMessages != null)
+                .ConfigureAwait(false))
             {
-                var discordChannel = await Context.Guild.GetChannelAsync(discordChannelForMessages.Value) as IMessageChannel;
-                if (discordChannel != null)
+                var serverConfigs = _mareServicesConfiguration.GetValueOrDefault(nameof(ServicesConfiguration.ServerConfigurations), new List<DiscordServerConfiguration>());
+                var server = serverConfigs.FirstOrDefault(x => x.ServerId == Context.Guild.Id);
+                var discordChannelForMessages = server?.DiscordChannelForMessages;
+                if (uid == null && discordChannelForMessages != null)
                 {
-                    var embedColor = messageType switch
+                    var discordChannel = await Context.Guild.GetChannelAsync(discordChannelForMessages.Value) as IMessageChannel;
+                    if (discordChannel != null)
                     {
-                        MessageSeverity.Information => Color.Blue,
-                        MessageSeverity.Warning => new Color(255, 255, 0),
-                        MessageSeverity.Error => Color.Red,
-                        _ => Color.Blue
-                    };
+                        var embedColor = messageType switch
+                        {
+                            MessageSeverity.Information => Color.Blue,
+                            MessageSeverity.Warning => new Color(255, 255, 0),
+                            MessageSeverity.Error => Color.Red,
+                            _ => Color.Blue
+                        };
 
-                    EmbedBuilder eb = new();
-                    eb.WithTitle(messageType + " server message");
-                    eb.WithColor(embedColor);
-                    eb.WithDescription(message);
+                        EmbedBuilder eb = new();
+                        eb.WithTitle(messageType + " server message");
+                        eb.WithColor(embedColor);
+                        eb.WithDescription(message);
 
-                    await discordChannel.SendMessageAsync(embed: eb.Build());
+                        await discordChannel.SendMessageAsync(embed: eb.Build());
+                    }
                 }
-            }
 
-            await RespondAsync("Message sent", ephemeral: true).ConfigureAwait(false);
+                await RespondAsync("Message sent", ephemeral: true).ConfigureAwait(false);
+            }
         }
         catch (Exception ex)
         {

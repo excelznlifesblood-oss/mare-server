@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using System.Text.Json;
 using MareSynchronosServer.Hubs;
 using MareSynchronosShared.Data;
 using MareSynchronosShared.Models;
@@ -6,6 +7,8 @@ using MareSynchronosShared.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ShoninSync.API.Dto.Group;
+using ShoninSync.API.Dto.User;
+using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace MareSynchronosServer.Utils;
 
@@ -14,31 +17,42 @@ public class SyncshellManager
     private readonly IDbContextFactory<MareDbContext> _dbContextFactory;
     private readonly ILogger<SyncshellManager> _logger;
     private readonly PairDataFetcher _pairDataFetcher;
+    private readonly IMessageDispatcher _dispatcher;
 
     public SyncshellManager(
         IDbContextFactory<MareDbContext> dbContextFactory,
         ILogger<SyncshellManager> logger,
-        PairDataFetcher pairDataFetcher
+        PairDataFetcher pairDataFetcher,
+        IMessageDispatcher dispatcher
         )
     {
         _dbContextFactory = dbContextFactory;
         _logger = logger;
         _pairDataFetcher = pairDataFetcher;
+        _dispatcher = dispatcher;
     }
 
     public async Task JoinSyncshell(string gid, string uid)
     {
         using var db = await _dbContextFactory.CreateDbContextAsync().ConfigureAwait(false);
         var aliasOrGid = gid;
+
         var group = await db.Groups.Include(g => g.Owner).AsNoTracking().SingleOrDefaultAsync(g => g.GID == aliasOrGid || g.Alias == aliasOrGid).ConfigureAwait(false);
         var groupGid = group?.GID ?? string.Empty;
         var existingPair = await db.GroupPairs.AsNoTracking().SingleOrDefaultAsync(g => g.GroupGID == groupGid && g.GroupUserUID == uid).ConfigureAwait(false);
+
         var existingUserCount = await db.GroupPairs.AsNoTracking().CountAsync(g => g.GroupGID == groupGid).ConfigureAwait(false);
         var joinedGroups = await db.GroupPairs.CountAsync(g => g.GroupUserUID == uid).ConfigureAwait(false);
         var isBanned = await db.GroupBans.AnyAsync(g => g.GroupGID == groupGid && g.BannedUserUID == uid).ConfigureAwait(false);
-        
+
+        if (group == null
+            || existingPair != null
+            || !group.InvitesEnabled
+            || isBanned)
+            return;
+
         // get all pairs before we join
-        var allUserPairs = await _pairDataFetcher.GetAllPairInfo(uid).ConfigureAwait(false);
+        var allUserPairs = (await _pairDataFetcher.GetAllPairInfo(uid).ConfigureAwait(false));
         
         GroupPair newPair = new()
         {
@@ -72,13 +86,34 @@ public class SyncshellManager
         }
 
         await db.GroupPairs.AddAsync(newPair).ConfigureAwait(false);
+
+
         await db.SaveChangesAsync().ConfigureAwait(false);
+
+        var groupInfos = await db.GroupPairs.Where(u => u.GroupGID == group.GID && (u.IsPinned || u.IsModerator)).ToListAsync().ConfigureAwait(false);
+
+        var groupInfoFull = new GroupFullInfoDto(group.ToGroupData(), group.Owner.ToUserData(),
+            group.ToEnum(), preferredPermissions.ToEnum(), newPair.ToEnum(),
+            groupInfos.ToDictionary(u => u.GroupUserUID, u => u.ToEnum(), StringComparer.Ordinal));
+        var messages = new List<Message>();
+        messages.Add(new Message
+        {
+            Type = AsynchronousSignalROperation.SendGroupFullInfo,
+            Payload = JsonSerializer.Serialize(new MessageDispatchDetails<GroupFullInfoDto>
+            {
+                UserUID = uid,
+                Dto = groupInfoFull
+            })
+        });
         
+
         var self = db.Users.Single(u => u.UID == uid);
+
         var groupPairs = await db.GroupPairs.Include(p => p.GroupUser)
             .Where(p => p.GroupGID == group.GID && p.GroupUserUID != uid).ToListAsync().ConfigureAwait(false);
+
         var userPairsAfterJoin = await _pairDataFetcher.GetAllPairInfo(uid).ConfigureAwait(false);
-        
+
         foreach (var pair in groupPairs)
         {
             var perms = userPairsAfterJoin.TryGetValue(pair.GroupUserUID, out var userinfo);
@@ -174,9 +209,53 @@ public class SyncshellManager
 
                 db.Update(otherPermissionToSelf);
             }
+            messages.Add(new Message
+            {
+                Type = AsynchronousSignalROperation.SendGroupPairJoined,
+                Payload = JsonSerializer.Serialize(new MessageDispatchDetails<GroupPairFullInfoDto>
+                {
+                    UserUID = uid,
+                    Dto = new GroupPairFullInfoDto(group.ToGroupData(),
+                        pair.ToUserData(), ownPermissionsToOther.ToUserPermissions(setSticky: ownPermissionsToOther.Sticky),
+                        otherPermissionToSelf.ToUserPermissions(setSticky: false))
+                })
+            });
+            messages.Add(new Message
+            {
+                Type = AsynchronousSignalROperation.SendGroupPairJoined,
+                Payload = JsonSerializer.Serialize(new  MessageDispatchDetails<GroupPairFullInfoDto>
+                {
+                    UserUID = pair.GroupUserUID,
+                    Dto = new GroupPairFullInfoDto(group.ToGroupData(),
+                        self.ToUserData(), otherPermissionToSelf.ToUserPermissions(setSticky: otherPermissionToSelf.Sticky),
+                        ownPermissionsToOther.ToUserPermissions(setSticky: false))
+                })
+            });
+
+             // if not paired prior and neither has the permissions set to paused, send online
+            if ((!allUserPairs.ContainsKey(pair.GroupUserUID) || (allUserPairs.TryGetValue(pair.GroupUserUID, out var info) && !info.IsSynced))
+                && !otherPermissionToSelf.IsPaused && !ownPermissionsToOther.IsPaused)
+            {
+                messages.Add(new Message
+                {
+                    Type = AsynchronousSignalROperation.SendOnlineUserNotifications,
+                    Payload = JsonSerializer.Serialize(new MessageDispatchDetails<OnlineUserNotificationDto>
+                    {
+                        UserUID = uid,
+                        Dto = new OnlineUserNotificationDto
+                        {
+                            UserUID = uid,
+                            PairUID = pair.GroupUserUID,
+                            Self = self.ToUserData(),
+                            Pair = pair.ToUserData()
+                        }
+                    })
+                });
+            }
         }
 
         await db.SaveChangesAsync().ConfigureAwait(false);
+        await _dispatcher.DispatchMessages(messages).ConfigureAwait(false);
     }
     
     public static async Task<CreatedSyncshell> CreateSyncshell(MareDbContext dbContext, string userUid, CancellationToken cancellationToken = default, string vanityId = null, string pw = null)
@@ -228,6 +307,5 @@ public class SyncshellManager
         await dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return new CreatedSyncshell(newGroup, initialPrefPermissions, initialPair, passwd, gid);
     }
-    
     public record CreatedSyncshell(Group NewGroup, GroupPairPreferredPermission InitialPrefPermissions, GroupPair InitialPair, string Passwd, string GID);
 }

@@ -33,6 +33,8 @@ public class ServerConfiguration : MareConfigurationBase
     public bool RunPermissionCleanupOnStartup { get; set; } = true;
     public int HubExecutionConcurrencyFilter { get; set; } = 50;
 
+    public RabbitMQConfiguration RabbitMQ { get; set; }
+    
     public IList<CommunitySyncshellConfig> CommunitySyncshellConfigs  { get; set; } = new List<CommunitySyncshellConfig>();
     
     public override string ToString()

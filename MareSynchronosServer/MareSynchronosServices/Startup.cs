@@ -1,6 +1,7 @@
 using MareSynchronosServer.Hubs;
 using MareSynchronosServer.Utils;
 using MareSynchronosServices.Discord;
+using MareSynchronosServices.Tools;
 using MareSynchronosShared.Data;
 using MareSynchronosShared.Metrics;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using MareSynchronosShared.Utils;
 using MareSynchronosShared.Services;
 using StackExchange.Redis;
 using MareSynchronosShared.Utils.Configuration;
+using RabbitMQ.Client;
 
 namespace MareSynchronosServices;
 
@@ -73,6 +75,25 @@ public class Startup
         services.AddSingleton<IConfigurationService<ServicesConfiguration>, MareConfigurationServiceServer<ServicesConfiguration>>();
         services.AddSingleton<IConfigurationService<ServerConfiguration>, MareConfigurationServiceClient<ServerConfiguration>>();
         services.AddSingleton<IConfigurationService<MareConfigurationBase>, MareConfigurationServiceClient<MareConfigurationBase>>();
+        services.AddSingleton<IConnectionFactory>(prv =>
+        {
+            var configService = prv.GetService<IConfigurationService<ServicesConfiguration>>();
+            var config =
+                configService.GetValue<RabbitMQConfiguration>(
+                    nameof(ServicesConfiguration.RabbitMQ));
+            var factory = new ConnectionFactory
+            {
+                UserName = config.User,
+                Password = config.Password,
+                VirtualHost = config.Vhost,
+                HostName = config.Hostname
+            };
+            return factory;
+        });
+        
+        
+        services.AddSingleton<IMessageDispatcher, MessageDispatcher>();
+        services.AddHostedService<MessageDispatcherInitializer>();
 
         services.AddHostedService(p => (MareConfigurationServiceClient<MareConfigurationBase>)p.GetService<IConfigurationService<MareConfigurationBase>>());
         services.AddHostedService(p => (MareConfigurationServiceClient<ServerConfiguration>)p.GetService<IConfigurationService<ServerConfiguration>>());
