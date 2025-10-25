@@ -1,11 +1,21 @@
 using MareSynchronosServices;
 using MareSynchronosShared.Services;
 using MareSynchronosShared.Utils.Configuration;
+using Serilog;
+using Serilog.Core;
 
 public class Program
 {
     public static void Main(string[] args)
     {
+        var levelSwitch = new LoggingLevelSwitch();
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .WriteTo.Seq("http://localhost:5341", 
+                apiKey: "wR6I02R95SNDUy3IXSHK",
+                controlLevelSwitch: levelSwitch
+                )
+            .CreateLogger();
         var hostBuilder = CreateHostBuilder(args);
         var host = hostBuilder.Build();
 

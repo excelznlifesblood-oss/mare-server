@@ -11,6 +11,7 @@ using MareSynchronosShared.Services;
 using StackExchange.Redis;
 using MareSynchronosShared.Utils.Configuration;
 using RabbitMQ.Client;
+using Serilog;
 
 namespace MareSynchronosServices;
 
@@ -35,6 +36,8 @@ public class Startup
     {
         var mareConfig = Configuration.GetSection("MareSynchronos");
 
+        services.AddSerilog();
+        
         services.AddDbContextPool<MareDbContext>(options =>
         {
             options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection"), builder =>
