@@ -37,8 +37,8 @@ public partial class ShoninWizardModule
     [ComponentInteraction("wizard-secondary-create:*")]
     public async Task ComponentSecondaryCreate(string primaryUid)
     {
-        await DeferAsync(true).ConfigureAwait(false);
         if (!(await ValidateInteraction().ConfigureAwait(false))) return;
+        await DeferAsync(true).ConfigureAwait(false);
 
         _logger.LogInformation("{method}:{userId}:{primary}", nameof(ComponentSecondaryCreate), Context.Interaction.User.Id, primaryUid);
 
