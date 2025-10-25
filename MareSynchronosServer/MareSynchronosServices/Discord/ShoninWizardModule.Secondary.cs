@@ -4,6 +4,7 @@ using MareSynchronosShared.Data;
 using Microsoft.EntityFrameworkCore;
 using MareSynchronosShared.Models;
 using MareSynchronosShared.Utils;
+using MareSynchronosShared.Utils.Configuration;
 
 namespace MareSynchronosServices.Discord;
 
@@ -80,6 +81,15 @@ public partial class ShoninWizardModule
         await db.Auth.AddAsync(auth).ConfigureAwait(false);
 
         await db.SaveChangesAsync().ConfigureAwait(false);
+        
+        var guildId = Context.Guild.Id;
+        var guildSettings = _mareServicesConfiguration.GetValue<List<DiscordServerConfiguration>>("ServerConfigurations");
+        var guildConfig = guildSettings.FirstOrDefault(x => x.ServerId == guildId);
+        if (guildConfig != null)
+        {
+            var syncshell = await db.Groups.FirstOrDefaultAsync(x => x.Alias.Equals(guildConfig.SyncshellVanityId)).ConfigureAwait(false);
+            await _syncshellManager.JoinSyncshell(syncshell.GID, newUser.UID).ConfigureAwait(false);
+        }
 
         embed.WithDescription("A secondary UID for you was created, use the information below and add the secret key to the Shonin Sync setings in the Service Settings tab.");
         embed.AddField("UID", newUser.UID);
