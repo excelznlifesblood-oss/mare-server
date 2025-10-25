@@ -37,6 +37,7 @@ public partial class ShoninWizardModule
     [ComponentInteraction("wizard-secondary-create:*")]
     public async Task ComponentSecondaryCreate(string primaryUid)
     {
+        await DeferAsync(true).ConfigureAwait(false);
         if (!(await ValidateInteraction().ConfigureAwait(false))) return;
 
         _logger.LogInformation("{method}:{userId}:{primary}", nameof(ComponentSecondaryCreate), Context.Interaction.User.Id, primaryUid);
@@ -48,7 +49,7 @@ public partial class ShoninWizardModule
         ComponentBuilder cb = new();
         AddHome(cb);
         await HandleAddSecondary(mareDb, eb, primaryUid).ConfigureAwait(false);
-        await ModifyInteraction(eb, cb).ConfigureAwait(false);
+        await FollowupAsync(embed: eb.Build(), components: cb.Build(), ephemeral:true).ConfigureAwait(false);
     }
 
     public async Task HandleAddSecondary(MareDbContext db, EmbedBuilder embed, string primaryUID)
@@ -95,7 +96,7 @@ public partial class ShoninWizardModule
         embed.AddField("UID", newUser.UID);
         embed.AddField("Secret Key", computedHash);
 
-        await _botServices.LogToChannel($"{Context.User.Mention} SECONDARY SUCCESS: {newUser.UID}").ConfigureAwait(false);
+        await _botServices.LogToChannel($"{Context.User.Mention} SECONDARY SUCCESS: {newUser.UID}", guildId).ConfigureAwait(false);
     }
 
 }
