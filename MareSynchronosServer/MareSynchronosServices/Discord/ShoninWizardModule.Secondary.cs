@@ -84,7 +84,7 @@ public partial class ShoninWizardModule
         await db.SaveChangesAsync().ConfigureAwait(false);
         
         var guildId = Context.Guild.Id;
-        var guildSettings = _mareServicesConfiguration.GetValue<List<DiscordServerConfiguration>>("ServerConfigurations");
+        var guildSettings = _mareServicesConfiguration.GetValue<IList<DiscordServerConfiguration>>("ServerConfigurations");
         var guildConfig = guildSettings.FirstOrDefault(x => x.ServerId == guildId);
         if (guildConfig != null)
         {
